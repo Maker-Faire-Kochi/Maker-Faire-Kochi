@@ -55,6 +55,29 @@
           </div>
         </div>
       </div>
+
+      <!-- Global Impact Stats -->
+      <div class="stats-container">
+        <h3 class="stats-header">The Global Impact of Maker Faire</h3>
+        <div class="stats-grid">
+          <div class="stat-card stat-cyan">
+            <span class="stat-number">40+</span>
+            <span class="stat-label">Countries Hosting</span>
+          </div>
+          <div class="stat-card stat-red">
+            <span class="stat-number">150+</span>
+            <span class="stat-label">Annual Faires</span>
+          </div>
+          <div class="stat-card stat-yellow">
+            <span class="stat-number">1.5M+</span>
+            <span class="stat-label">Annual Attendees</span>
+          </div>
+          <div class="stat-card stat-dark">
+            <span class="stat-number">2006</span>
+            <span class="stat-label">Year Established</span>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
@@ -179,10 +202,112 @@
   transform: translate(-4px, -4px);
 }
 
+/* Global Stats Section */
+.stats-container {
+  margin-top: 5rem;
+  padding-top: 4rem;
+  border-top: 4px dashed var(--color-gray-400);
+}
+
+.stats-header {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 3rem;
+  color: var(--color-dark);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+}
+
+.stat-card {
+  background-color: var(--color-white);
+  border: var(--border-width-thick) solid var(--color-dark);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border-radius: 6px;
+  transition: transform var(--transition-fast);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-cyan {
+  box-shadow: 6px 6px 0px var(--color-cyan);
+}
+.stat-cyan .stat-number {
+  color: var(--color-cyan);
+}
+.stat-cyan:hover {
+  box-shadow: 10px 10px 0px var(--color-cyan);
+}
+
+.stat-red {
+  box-shadow: 6px 6px 0px var(--color-red);
+}
+.stat-red .stat-number {
+  color: var(--color-red);
+}
+.stat-red:hover {
+  box-shadow: 10px 10px 0px var(--color-red);
+}
+
+.stat-yellow {
+  box-shadow: 6px 6px 0px var(--color-yellow);
+}
+.stat-yellow .stat-number {
+  color: var(--color-yellow);
+  -webkit-text-stroke: 1px var(--color-dark);
+}
+.stat-yellow:hover {
+  box-shadow: 10px 10px 0px var(--color-yellow);
+}
+
+.stat-dark {
+  box-shadow: 6px 6px 0px var(--color-dark);
+}
+.stat-dark .stat-number {
+  color: var(--color-dark);
+}
+.stat-dark:hover {
+  box-shadow: 10px 10px 0px var(--color-dark);
+}
+
+.stat-number {
+  display: block;
+  font-family: var(--font-headline);
+  font-size: 3.5rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  color: var(--color-gray-800);
+}
+
 @media (max-width: 992px) {
   .about-grid {
     grid-template-columns: 1fr;
     gap: 4rem;
+  }
+  
+  .stats-container {
+    margin-top: 4rem;
+    padding-top: 3rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 }
 </style>
