@@ -248,4 +248,28 @@ onUnmounted(() => {
     align-items: center;
   }
 }
+
+@media (max-width: 480px) {
+  .countdown-grid {
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+  
+  .time-block {
+    flex: none;
+    width: calc(50% - 0.5rem); /* Render as 2x2 grid */
+    max-width: none;
+    padding: 1rem 0.5rem;
+    box-shadow: 3px 3px 0px var(--color-cyan);
+  }
+  
+  .time-separator {
+    display: none; /* Hide separators in 2x2 format */
+  }
+  
+  .time-number {
+    font-size: 2rem;
+  }
+}
 </style>

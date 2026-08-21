@@ -292,17 +292,46 @@
   
   .hero-subtitle {
     max-width: 100%;
+    font-size: 1.1rem;
   }
   
   .hero-actions {
     justify-content: center;
+    gap: 1rem;
   }
   
   .hero-visual {
     margin-top: 1rem;
-    max-width: 90%;
+    max-width: 100%;
     margin-left: auto;
     margin-right: auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero-actions .btn-maker {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Prevent stickers from pushing outside screen margins */
+  .sticker-craft {
+    left: 10px;
+    bottom: 10px;
+  }
+
+  .sticker-tech {
+    right: 10px;
+    top: 10px;
+  }
+
+  .frame-sticker {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
   }
 }
 </style>
