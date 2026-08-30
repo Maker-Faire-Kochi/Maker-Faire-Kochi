@@ -1,59 +1,92 @@
+<script setup lang="ts">
+import { Hammer, Users, Sparkles } from '@lucide/vue'
+
+/**
+ * Three equal icon+heading+text cards was the page's structure here. Cards are
+ * the lazy container: they flatten three different invitations into one shape
+ * and let the section carry no hierarchy at all. This is a hairline-separated
+ * editorial stack instead — same content, real rhythm, and it collapses to a
+ * single column without the card chrome fighting it.
+ */
+const invitations = [
+  {
+    icon: Hammer,
+    title: 'Exhibit your project',
+    body: 'Whether you built a giant metal dragon, a smart IoT farm system, or beautiful upcycled art — we want you to show it.',
+    href: 'https://forms.gle/makerfairekochi2027',
+    cta: 'Apply to exhibit',
+    external: true,
+  },
+  {
+    icon: Users,
+    title: 'Learn and connect',
+    body: 'Meet developers, hardware designers, crafters and educators. Share knowledge, tools and ideas.',
+    href: '#countdown',
+    cta: 'See the dates',
+    external: false,
+  },
+  {
+    icon: Sparkles,
+    title: 'Inspire the next lot',
+    body: 'Bring your kids and family for hands-on workshops, live demos, robotics leagues and interactive science.',
+    href: '#categories',
+    cta: 'Explore what fits',
+    external: false,
+  },
+]
+</script>
+
 <template>
   <section id="about" class="about-section section-padding">
     <div class="container">
       <div class="about-grid">
         <div class="about-text-area">
-          <span class="badge-maker badge-maker-red">The Movement</span>
           <h2 class="section-title">What is Maker Faire?</h2>
           <p class="lead-text">
             Maker Faire is the Greatest Show (and Tell) on Earth—a family-friendly festival of invention, creativity, and resourcefulness.
           </p>
           <p class="body-text">
-            It is a gathering of fascinating, curious people who enjoy learning and who love sharing what they can do. From engineers to artists, science clubs to hobbyists, Maker Faire is a venue for makers to show their hobbies, experiments, and projects.
+            A gathering of curious people who like learning and love showing what
+            they can do — engineers and embroiderers, science clubs and cooks,
+            hobbyists and hard-headed tinkerers.
           </p>
           <p class="body-text">
-            We call it the <strong>celebration of the Maker Movement</strong>. It is a place where hands-on learning meets future technology, and where anyone can discover the joy of creating something from scratch.
+            We call it a <strong>celebration of the Maker Movement</strong>: a place
+            where hands-on learning meets whatever comes next, and where anyone can
+            find out what it feels like to make a thing from scratch.
           </p>
 
-          <div class="kochi-focus">
-            <h3 class="focus-title">Why Kochi?</h3>
-            <p class="body-text">
-              Kochi is the innovation and hardware prototyping capital of Kerala. With a thriving ecosystem of startup incubators, fablabs, maker spaces, and creative design studios, Kochi is uniquely positioned to host a diverse gathering of minds ready to shape the future.
-            </p>
-          </div>
         </div>
 
-        <div class="about-cards-area">
-          <!-- Card 1 -->
-          <div class="card-maker card-about card-red">
-            <div class="card-icon">🛠️</div>
-            <h3 class="card-title">Exhibit Your Project</h3>
-            <p class="card-desc">
-              Whether you built a giant metal dragon, a smart IoT farm system, or beautiful upcycled art—we want you to showcase it!
-            </p>
-            <a href="https://forms.gle/makerfairekochi2027" target="_blank" rel="noopener noreferrer" class="card-link">Apply to Exhibit →</a>
-          </div>
+        <ul class="invitations">
+          <li v-for="item in invitations" :key="item.title" class="invitation">
+            <component :is="item.icon" class="invitation-icon" :size="22" :stroke-width="1.75" aria-hidden="true" />
+            <div class="invitation-body">
+              <h3 class="invitation-title">{{ item.title }}</h3>
+              <p class="invitation-text">{{ item.body }}</p>
+              <a
+                :href="item.href"
+                :target="item.external ? '_blank' : undefined"
+                :rel="item.external ? 'noopener noreferrer' : undefined"
+                class="invitation-link"
+              >{{ item.cta }}</a>
+            </div>
+          </li>
+        </ul>
+      </div>
 
-          <!-- Card 2 -->
-          <div class="card-maker card-about card-cyan">
-            <div class="card-icon">💡</div>
-            <h3 class="card-title">Learn & Connect</h3>
-            <p class="card-desc">
-              Meet fellow developers, expert hardware designers, crafters, and educators. Share knowledge, tools, and ideas.
-            </p>
-            <a href="#countdown" class="card-link">Save the Date →</a>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="card-maker card-about card-yellow">
-            <div class="card-icon">🚀</div>
-            <h3 class="card-title">Inspire the Next Gen</h3>
-            <p class="card-desc">
-              Bring your kids and family to witness hands-on workshops, live demos, robotics leagues, and interactive science experiments.
-            </p>
-            <a href="#categories" class="card-link">Explore Themes →</a>
-          </div>
-        </div>
+      <!-- Full-width row of its own. It used to sit at the bottom of the left
+           column, which is most of why that column ran roughly twice the height
+           of the right one. -->
+      <div class="kochi-focus">
+        <h3 class="focus-title">Why Kochi?</h3>
+        <p class="kochi-text">
+          Kochi is the innovation and hardware prototyping capital of Kerala — a
+          thriving ecosystem of incubators, fablabs, maker spaces and design
+          studios. It is also a city that has repaired, adapted and re-rigged
+          borrowed technology for six hundred years. Both of those are the same
+          instinct.
+        </p>
       </div>
 
       <!-- Global Impact Stats -->
@@ -68,7 +101,7 @@
             <span class="stat-number">150+</span>
             <span class="stat-label">Annual Faires</span>
           </div>
-          <div class="stat-card stat-yellow">
+          <div class="stat-card stat-cyan-alt">
             <span class="stat-number">1.5M+</span>
             <span class="stat-label">Annual Attendees</span>
           </div>
@@ -88,25 +121,34 @@
   border-bottom: var(--border-width-thick) solid var(--color-dark);
 }
 
+/* Equal columns. It was 1.1fr / 0.9fr with all the prose plus the Kochi panel
+   on the left, so the left ran roughly twice the height of the right and the
+   row read as lopsided. "Why Kochi" now sits in its own full-width row below. */
 .about-grid {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
   align-items: start;
 }
 
 .section-title {
-  font-size: 3rem;
-  margin-top: 0.5rem;
-  margin-bottom: 2rem;
+  font-size: clamp(2rem, 3.4vw, 2.75rem);
+  margin-bottom: 1.5rem;
   color: var(--color-dark);
 }
 
+/* A pull quote, not three lines of shouting. It was 20.8px of saturated
+   --color-red-cta running three lines deep, which passes contrast (6.09:1) but
+   fights the headline directly above it for the same attention. Red survives as
+   the rule down the left edge — an accent beside the words, which is what the
+   palette reserves it for — while the words themselves are read in ink. */
 .lead-text {
   font-size: 1.3rem;
   font-weight: 600;
-  color: var(--color-red);
+  color: var(--color-ink);
   margin-bottom: 1.5rem;
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--color-red-cta);
 }
 
 .body-text {
@@ -115,11 +157,20 @@
 }
 
 .kochi-focus {
-  background-color: var(--color-gray-100);
-  border-left: var(--border-width-thick) solid var(--color-cyan);
-  padding: 1.5rem;
-  margin-top: 2rem;
-  border-radius: 0 4px 4px 0;
+  margin-top: 4rem;
+  padding: 2rem 2.25rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: 14px;
+}
+
+/* This is the section's argument, not its footnote. At --color-muted (#5A6169,
+   6.27:1) and 1.1rem it read as fine print under its own heading; --color-gray-800
+   is #3A3F45 at 10.62:1, which is the emphasis the content actually carries. */
+.kochi-text {
+  max-width: 68ch;
+  font-size: 1.15rem;
+  color: var(--color-gray-800);
 }
 
 .focus-title {
@@ -128,85 +179,67 @@
   margin-bottom: 0.75rem;
 }
 
-/* Right Cards Grid */
-.about-cards-area {
+/* Invitations — a hairline-separated stack, not a card grid. */
+.invitations {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.card-about {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+.invitation {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  padding: 1.75rem 0;
+  border-top: 1px solid var(--color-hairline);
 }
 
-.card-icon {
-  font-size: 2.2rem;
-  margin-bottom: 1rem;
+.invitation:last-child {
+  border-bottom: 1px solid var(--color-hairline);
 }
 
-.card-title {
-  font-size: 1.3rem;
-  margin-bottom: 0.5rem;
-  color: var(--color-dark);
+.invitation-icon {
+  /* Not cyan: a 1.75-stroke glyph at #00AEEF on white is 2.53:1, under the 3:1
+     non-text floor and visibly faint. Cyan stays structural on dark grounds. */
+  color: var(--color-ink);
+  margin-top: 0.15rem;
 }
 
-.card-desc {
-  font-size: 0.95rem;
-  color: var(--color-gray-800);
-  margin-bottom: 1.5rem;
+.invitation-title {
+  font-size: 1.15rem;
+  color: var(--color-ink);
 }
 
-.card-link {
+.invitation-text {
+  margin-top: 0.5rem;
+  font-size: 0.98rem;
+  color: var(--color-muted);
+}
+
+.invitation-link {
+  display: inline-block;
+  margin-top: 0.85rem;
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  color: var(--color-dark);
-  margin-top: auto;
-  border-bottom: 2px solid transparent;
+  letter-spacing: 0.06em;
+  color: var(--color-red-cta);
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
 }
 
-.card-link:hover {
-  border-color: var(--color-dark);
-}
-
-/* Card border modifications */
-.card-red {
-  border-color: var(--color-dark);
-  box-shadow: 6px 6px 0px var(--color-red);
-}
-.card-red:hover {
-  box-shadow: 10px 10px 0px var(--color-red);
-  transform: translate(-4px, -4px);
-}
-
-.card-cyan {
-  border-color: var(--color-dark);
-  box-shadow: 6px 6px 0px var(--color-cyan);
-}
-.card-cyan:hover {
-  box-shadow: 10px 10px 0px var(--color-cyan);
-  transform: translate(-4px, -4px);
-}
-
-.card-yellow {
-  border-color: var(--color-dark);
-  box-shadow: 6px 6px 0px var(--color-yellow);
-}
-.card-yellow:hover {
-  box-shadow: 10px 10px 0px var(--color-yellow);
-  transform: translate(-4px, -4px);
+.invitation-link:hover {
+  color: var(--color-ink);
 }
 
 /* Global Stats Section */
 .stats-container {
   margin-top: 5rem;
   padding-top: 4rem;
-  border-top: 4px dashed var(--color-gray-400);
+  border-top: 1px dashed var(--color-gray-400);
 }
 
 .stats-header {
@@ -236,44 +269,47 @@
 }
 
 .stat-cyan {
-  box-shadow: 6px 6px 0px var(--color-cyan);
+  border-top: 3px solid var(--color-cyan);
+  box-shadow: var(--shadow-soft);
 }
 .stat-cyan .stat-number {
-  color: var(--color-cyan);
+  color: var(--color-ink);
 }
 .stat-cyan:hover {
-  box-shadow: 10px 10px 0px var(--color-cyan);
+  box-shadow: var(--shadow-soft-lg);
 }
 
 .stat-red {
-  box-shadow: 6px 6px 0px var(--color-red);
+  border-top: 3px solid var(--color-red-cta);
+  box-shadow: var(--shadow-soft);
 }
 .stat-red .stat-number {
-  color: var(--color-red);
+  color: var(--color-ink);
 }
 .stat-red:hover {
-  box-shadow: 10px 10px 0px var(--color-red);
+  box-shadow: var(--shadow-soft-lg);
 }
 
-.stat-yellow {
-  box-shadow: 6px 6px 0px var(--color-yellow);
+.stat-cyan-alt {
+  border-top: 3px solid var(--color-cyan);
+  box-shadow: var(--shadow-soft);
 }
-.stat-yellow .stat-number {
-  color: var(--color-yellow);
-  -webkit-text-stroke: 1px var(--color-dark);
+.stat-cyan-alt .stat-number {
+  color: var(--color-ink);
 }
-.stat-yellow:hover {
-  box-shadow: 10px 10px 0px var(--color-yellow);
+.stat-cyan-alt:hover {
+  box-shadow: var(--shadow-soft-lg);
 }
 
 .stat-dark {
-  box-shadow: 6px 6px 0px var(--color-dark);
+  border-top: 3px solid var(--color-ink);
+  box-shadow: var(--shadow-soft);
 }
 .stat-dark .stat-number {
-  color: var(--color-dark);
+  color: var(--color-ink);
 }
 .stat-dark:hover {
-  box-shadow: 10px 10px 0px var(--color-dark);
+  box-shadow: var(--shadow-soft-lg);
 }
 
 .stat-number {

@@ -1,0 +1,290 @@
+/* ------------------------------------------------------------------ *
+   Hero scene — live vector art, no video.
+
+   Every selector is scoped under .hero-scene because the class names inside
+   the generated SVG (.ln, .mesh, .cable) are deliberately short and would
+   otherwise be far too generic to live in a global sheet.
+
+   Palette comes from main.css. It is referenced, never re-declared: the one
+   thing that reliably makes a rebuild look "close but off" is a second copy
+   of the tokens drifting from the first.
+ * ------------------------------------------------------------------ */
+.hero-scene {
+  --peep-ink: var(--color-ink);
+  --peep-body: #F4F4F4;
+  --machine: var(--color-cyan);
+  --machine-deep: #0B7FAE;
+  --paper: #EAEAEA;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- drawing conventions --- */
+.hero-scene .ln {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hero-scene .ground { stroke-width: 3; opacity: 0.55; }
+.hero-scene .thin { stroke-width: 2.6; opacity: 0.9; }
+.hero-scene .fill-cyan  { fill: var(--machine); }
+.hero-scene .fill-deep  { fill: var(--machine-deep); }
+/* NOT the background colour. --paper matches the scene ground exactly, so a
+   shape filled with it is invisible -- which silently erased the sculpture
+   plinth and every "solid" prop. Objects get a faint tint plus their outline. */
+.hero-scene .fill-paper { fill: #DFE2E4; }
+.hero-scene .fill-red   { fill: var(--color-red-cta); }
+
+.hero-scene .fg-ground {
+  fill: var(--color-ink);
+  opacity: 0.055;
+}
+
+.hero-scene .cable {
+  fill: none;
+  stroke: var(--color-red-cta);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+/* ------------------------------------------------------------------ *
+   Motion.
+
+   Three rules govern everything here:
+
+   1. Rotation uses `transform-box: view-box` with an explicit
+      `transform-origin`. SVG children default to a 0 0 origin, so a gear
+      given a bare rotate() orbits the top-left corner of the canvas instead
+      of spinning. Each animated group carries its own --pivot.
+
+   2. Gear periods are NOT written here. They are computed from tooth counts
+      in remotion/scripts/scene/gearTower.cjs and arrive as inline --dur and
+      data-dir, so the stylesheet cannot drift from the geometry that derived
+      it. A 48-tooth wheel meshed to a 32-tooth wheel turns at 3/2 the period
+      and the opposite way; hard-coding those numbers in CSS guarantees they
+      eventually disagree with the drawing.
+
+   3. THE 48s MASTER CYCLE. Every duration divides 48s exactly, and every
+      oscillation uses `alternate` (which doubles its period). So the whole
+      scene returns to its exact starting state every 48 seconds:
+
+        camera  24s alt -> 48      gears  6/8/12/16/24s linear
+        arms    12s / 8s alt       turbine 6s, drone rotor 0.5s
+        figures 3/4/6/8/12s alt -> 6/8/12/16/24
+
+      That is what makes this a real loop rather than a disguised one. The old
+      film could not close -- its first and last frames were 0.174 RMSE apart,
+      which is why it needed a 520ms crossfade. Here frame(0) and frame(48s)
+      are the same image, verified at 0.000 RMSE by scripts/verify-loop.cjs.
+ * ------------------------------------------------------------------ */
+.hero-scene .is-animated {
+  transform-box: view-box;
+  transform-origin: var(--pivot, 50% 50%);
+}
+
+/* A joint rotates about its own local origin. Used where an animated group is
+   nested inside a translated/scaled parent -- a --pivot in viewBox coordinates
+   does not survive that, because transform-origin resolves in the element's
+   LOCAL user space, which the ancestor transform has already changed. The
+   markup translates the pivot to the origin instead. */
+.hero-scene .joint {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+.hero-scene .arm-shoulder { animation: arm-lower 12s ease-in-out infinite alternate; }
+.hero-scene .arm-elbow    { animation: arm-upper  8s ease-in-out infinite alternate; }
+.hero-scene .arm-wrist    { animation: arm-wrist  6s ease-in-out infinite alternate; }
+
+@keyframes arm-wrist { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+
+/* Camera: the reference film pushes in and eases back out. */
+/* The push-in CROPS the frame edges, which is what made the outermost
+   machines look severed at full zoom. At scale S about origin 58%/62%, the
+   surviving band is roughly:
+       1.075 -> x [94, 1879]      1.045 -> x [64, 1901]
+   Anything outside that is cut at peak zoom. 1.045 keeps a visible push while
+   leaving room for the robot arm and turbine on the right and the loom on the left.
+   If you raise it, move those two inboard to match. */
+@keyframes hero-camera {
+  from { transform: scale(1)     translate(0px, 0px); }
+  to   { transform: scale(1.045) translate(-16px, 10px); }
+}
+
+.hero-scene .camera {
+  transform-origin: 58% 62%;   /* pushes toward the machines, not dead centre */
+  animation: hero-camera 24s ease-in-out infinite alternate;
+
+  /* THE one performance lever in this scene, and the reason it is applied here
+     and nowhere else.
+
+     Measured: the camera accounts for effectively all of the animation's
+     main-thread cost, because it transforms the ENTIRE scene -- a full-viewport
+     repaint of ~186k characters of path geometry every frame. The other ~41
+     animations are small local repaints and do not register above noise.
+
+     `will-change: transform` promotes this ONE group to its own compositing
+     layer, so the zoom becomes a composited transform instead of a repaint.
+     Blanket-applying it to every animated node would be the opposite of an
+     optimisation: 42 layers, each with its own texture, would cost far more
+     memory than it saves. */
+  will-change: transform;
+}
+
+/* Every wheel in the scene — gear train, crank, press handwheel, grinder —
+   shares one contract: --dur for speed, data-dir for direction. */
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes spin-back { to { transform: rotate(-360deg); } }
+
+.hero-scene .cog,
+.hero-scene .crank {
+  animation: spin var(--dur, 24s) linear infinite;
+}
+
+.hero-scene .cog[data-dir="-1"],
+.hero-scene .crank[data-dir="-1"] {
+  animation-name: spin-back;
+}
+
+/* Robot arm: every joint goes out and back, so the arm ends where it started.
+   Amplitudes are larger now that the linkage is actually legible -- a 7deg
+   sweep on a visible six-axis arm reads as a twitch, not as work. */
+@keyframes arm-lower { from { transform: rotate(-9deg); } to { transform: rotate(11deg); } }
+@keyframes arm-upper { from { transform: rotate(-14deg); } to { transform: rotate(18deg); } }
+
+/* ---- The exhibits, all running ----
+
+   A Maker Faire is a show and tell, so every machine has to visibly work.
+   Each period below divides the 48s master cycle, which is what keeps the
+   whole scene loop-exact even with six independent mechanisms going.
+
+   The loom shuttle needs the same trick a rotating gear uses to loop without a
+   seam: it ALTERNATES rather than repeating, so it retraces its own path
+   instead of jumping back at every local reset. */
+
+/* additive: gantry sweeps across the bed */
+@keyframes gantry-sweep { from { transform: translateX(-24px); } to { transform: translateX(24px); } }
+.hero-scene .gantry { animation: gantry-sweep 4s ease-in-out infinite alternate; }
+
+/* craft: the loom shuttle crosses the warp and comes back. ALTERNATE, so the
+   real period is 2x8s = 16s -- which divides 48. scene:check knows this and
+   doubles any `alternate` duration before testing it. */
+@keyframes shuttle-run { from { transform: translateX(0); } to { transform: translateX(var(--travel, 60px)); } }
+.hero-scene .shuttle { animation: shuttle-run 8s ease-in-out infinite alternate; }
+
+/* Status lights. The LED matrix that named this rule is gone, but the 3D
+   printer and the drone both still emit .led -- and the rule carries the
+   red FILL as well as the blink, so deleting it would grey them out. */
+@keyframes led-blink { 0%, 45% { opacity: 1; } 55%, 100% { opacity: 0.18; } }
+.hero-scene .led {
+  fill: var(--color-red-cta);
+  animation: led-blink var(--bdur, 2s) steps(1, end) infinite;
+  animation-delay: var(--bdelay, 0s);
+}
+
+/* aerial: rotors are a blur, and the airframe hovers */
+.hero-scene .rotor { animation: spin var(--dur, 0.5s) linear infinite; }
+@keyframes hover { from { transform: translateY(0); } to { transform: translateY(-16px); } }
+.hero-scene .ex-drone { animation: hover var(--hover, 6s) ease-in-out infinite alternate; }
+
+/* energy: the turbine turns. */
+.hero-scene .turbine-rotor { animation: spin 6s linear infinite; }
+
+/* Figures: an idle bob, with amplitude, period and phase varied per instance
+   from the generator so the crowd never pulses in unison.
+
+   The bob sits on .peep, which WRAPS the placement group .peep-at. Both halves
+   of that matter:
+     - a CSS transform REPLACES an SVG transform attribute rather than
+       composing with it, so animating the placed node throws the figure to the
+       origin at native scale;
+     - .peep is deliberately OUTSIDE the scale, because inside it a 4px bob is
+       multiplied by the figure scale (~0.11) and becomes 0.4 units of nothing. */
+@keyframes peep-bob {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(-1 * var(--bob, 4px))); }
+}
+
+.hero-scene .peep {
+  animation: peep-bob var(--bdur, 4s) ease-in-out infinite alternate;
+  animation-delay: var(--bdelay, 0s);
+}
+
+/* ------------------------------------------------------------------ *
+   Stopping the motion.
+
+   The in-page pause control was removed at the owner's request, so its
+   `.is-paused` selector block went with it rather than being left as dead CSS.
+
+   `is-ready` is now driven by three conditions in NetHero.vue -- mounted, not
+   Save-Data, and in the viewport -- so the scene also suspends once it scrolls
+   off screen. That is NOT a WCAG 2.2.2 pause mechanism: the visitor does not
+   control it, and scrolling back re-starts the motion on its own.
+   `prefers-reduced-motion` below is still the only real accommodation, and the
+   absence of an in-page control remains a known, accepted gap.
+
+   If a pause control is ever restored, it needs to re-list EVERY animated
+   class by name: animation-play-state is not inherited, so pausing an
+   ancestor pauses nothing.
+ * ------------------------------------------------------------------ */
+
+/* No JavaScript: the scene must not animate at all, because the pause control
+   is a client component and would never arrive to stop it. Animation is opted
+   IN by the hydration class rather than opted out. */
+.hero-stage:not(.is-ready) .is-animated,
+.hero-stage:not(.is-ready) .peep,
+.hero-stage:not(.is-ready) .cog,
+.hero-stage:not(.is-ready) .crank,
+.hero-stage:not(.is-ready) .camera,
+.hero-stage:not(.is-ready) .gantry,
+.hero-stage:not(.is-ready) .shuttle,
+.hero-stage:not(.is-ready) .led,
+.hero-stage:not(.is-ready) .rotor,
+.hero-stage:not(.is-ready) .ex-drone,
+.hero-stage:not(.is-ready) .turbine-rotor,
+.hero-stage:not(.is-ready) .arm-shoulder,
+.hero-stage:not(.is-ready) .arm-elbow,
+.hero-stage:not(.is-ready) .arm-wrist,
+.hero-stage:not(.is-ready) .joint {
+  animation: none;
+}
+
+/* Release the compositing layer whenever the scene is not moving — no-JS,
+   Save-Data, or scrolled out of view. `will-change: transform` on .camera is
+   the scene's one performance lever (see above), but it holds a full-viewport
+   texture for ~186k characters of path geometry, and holding that for a scene
+   that is standing still is pure cost. */
+.hero-stage:not(.is-ready) .camera {
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene .is-animated,
+  .hero-scene .peep,
+  .hero-scene .cog,
+  .hero-scene .crank,
+  .hero-scene .camera,
+  .hero-scene .gantry,
+  .hero-scene .shuttle,
+  .hero-scene .led,
+  .hero-scene .rotor,
+  .hero-scene .ex-drone,
+  .hero-scene .turbine-rotor,
+  .hero-scene .arm-shoulder,
+  .hero-scene .arm-elbow,
+  .hero-scene .arm-wrist,
+  .hero-scene .joint {
+    animation: none !important;
+  }
+
+  /* Same reasoning as the :not(.is-ready) rule: nothing moves, so nothing needs
+     a promoted layer. */
+  .hero-scene .camera {
+    will-change: auto;
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "makerfaire-kochi-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Authoring workspace for Maker Faire Kochi. NOT part of the Nuxt build. Hosts the legacy offline video pipeline and the current hero scene generator.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:exact": "remotion render ExactCopy out/net-exact-720.mp4 --codec=h264 --crf=18 --muted",
+    "render:hd": "remotion render ExactCopyHD out/net-exact-1080.mp4 --codec=h264 --crf=18 --muted",
+    "render:hero": "remotion render HeroLoop out/net-hero.mp4 --codec=h264 --crf=23 --muted",
+    "render:hero-webm": "remotion render HeroLoop out/net-hero.webm --codec=vp9 --crf=34 --muted",
+    "still:poster": "remotion still HeroLoop out/net-hero-poster.png --frame=107",
+    "render:web-mp4": "remotion render ExactCopy out/net-full-web.mp4 --codec=h264 --crf=27 --muted",
+    "render:web-webm": "remotion render ExactCopy out/net-full-web.webm --codec=vp9 --crf=44 --muted",
+    "scene:extract": "node scripts/extract-peeps.cjs",
+    "scene:measure": "node scripts/measure-bbox.cjs",
+    "scene:build": "node scripts/build-scene.cjs",
+    "scene": "npm run scene:extract && npm run scene:measure && npm run scene:build && npm run scene:check && npm run scene:spacing && npm run scene:preview && npm run scene:grounded",
+    "scene:preview": "node scripts/preview.cjs",
+    "scene:verify-loop": "node scripts/verify-loop.cjs",
+    "scene:contrast": "node scripts/measure-contrast.cjs",
+    "scene:enumerate": "node scripts/enumerate.cjs",
+    "scene:gif": "node scripts/render-gif.cjs",
+    "scene:check": "node scripts/check-periods.cjs",
+    "scene:isolate": "node scripts/isolate.cjs",
+    "scene:grounded": "node scripts/check-grounded.cjs",
+    "scene:spacing": "node scripts/check-spacing.cjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.517",
+    "remotion": "4.0.517",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-peeps": "0.1.10"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
+}

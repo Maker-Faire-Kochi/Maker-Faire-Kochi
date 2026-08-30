@@ -1,275 +1,233 @@
-<script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { EVENT, EVENT_START, EVENT_END, useCountdown } from '~/composables/useCountdown'
 
-const targetDate = new Date('2027-01-26T09:00:00+05:30').getTime()
+/**
+ * Timer logic lives in the composable, shared with the hero overlay, so the two
+ * can never drift apart or disagree by a second.
+ */
+const { units, phase } = useCountdown()
 
-const days = ref('00')
-const hours = ref('00')
-const minutes = ref('00')
-const seconds = ref('00')
-const eventStarted = ref(false)
-
-let timerInterval = null
-
-const updateCountdown = () => {
-  const now = new Date().getTime()
-  const distance = targetDate - now
-
-  if (distance < 0) {
-    eventStarted.value = true
-    days.value = '00'
-    hours.value = '00'
-    minutes.value = '00'
-    seconds.value = '00'
-    if (timerInterval) clearInterval(timerInterval)
-    return
-  }
-
-  const d = Math.floor(distance / (1000 * 60 * 60 * 24))
-  const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
-  const s = Math.floor((distance % (1000 * 60)) / 1000)
-
-  days.value = String(d).padStart(2, '0')
-  hours.value = String(h).padStart(2, '0')
-  minutes.value = String(m).padStart(2, '0')
-  seconds.value = String(s).padStart(2, '0')
-}
-
-onMounted(() => {
-  updateCountdown()
-  timerInterval = setInterval(updateCountdown, 1000)
-})
-
-onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval)
+/**
+ * The dates are the point of this section, and until now they existed only as
+ * pixels — invisible to search results, link previews and "add to calendar".
+ * Structured data is where a date is actually machine-readable.
+ */
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Event',
+        name: 'Maker Faire Kochi 2027',
+        startDate: EVENT_START.toISOString(),
+        endDate: EVENT_END.toISOString(),
+        eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        description:
+          'A family-friendly festival of invention, creativity and resourcefulness. The Greatest Show (& Tell) on Earth comes to Kerala for the first time.',
+        location: {
+          '@type': 'Place',
+          name: EVENT.place,
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: EVENT.placeLocality,
+            addressRegion: EVENT.placeRegion,
+            addressCountry: EVENT.placeCountry,
+          },
+        },
+      }),
+    },
+  ],
 })
 </script>
 
 <template>
-  <section id="countdown" class="countdown-section">
-    <div class="container">
-      <div class="blueprint-box">
-        <div class="blueprint-grid-bg"></div>
-        <div class="blueprint-header">
-          <span class="blueprint-title">SYSTEM STATUS: EVENT_COUNTDOWN.EXE</span>
-          <span class="blueprint-date">T-MINUS SYSTEM</span>
+  <section id="countdown" class="countdown-section section-padding">
+    <div class="container countdown-inner">
+      <h2 class="countdown-title">
+        Two days. One harbour.<br />
+        <span class="countdown-title-accent">Everything anyone made.</span>
+      </h2>
+
+      <!-- The date leads, and it renders in every phase.
+           It used to sit BELOW the countdown grid at 14.4px in muted grey, under
+           four 52px numerals — so the number that changes every second dominated
+           the section and the date the whole section exists to communicate was
+           the smallest thing in it. That is the inversion this fixes. -->
+      <p class="countdown-date">
+        <time :datetime="EVENT.rangeStart.iso">{{ EVENT.rangeStart.label }}</time>
+        &ndash;
+        <time :datetime="EVENT.rangeEnd.iso">{{ EVENT.rangeEnd.label }}</time>
+      </p>
+
+      <p class="countdown-when">
+        <span>{{ EVENT.gatesLabel }}</span>
+        <span class="countdown-dot" aria-hidden="true"></span>
+        <span>{{ EVENT.place }}</span>
+      </p>
+
+      <template v-if="phase === 'upcoming'">
+        <p class="countdown-eyebrow eyebrow">Time remaining</p>
+
+        <!-- No aria-live: a value that changes every second would be relentless
+             noise on a screen reader. The date line above carries the same
+             information, and is what the group's label points at. -->
+        <div
+          class="countdown-grid"
+          role="group"
+          aria-label="Time remaining until Maker Faire Kochi opens on 26 January 2027"
+        >
+          <div v-for="u in units" :key="u.key" class="time-block">
+            <span class="time-number">{{ u.value }}</span>
+            <span class="time-label">{{ u.label }}</span>
+          </div>
         </div>
-        
-        <div class="countdown-grid">
-          <!-- Days -->
-          <div class="time-block">
-            <div class="time-number">{{ days }}</div>
-            <div class="time-label">Days</div>
-          </div>
-          
-          <div class="time-separator">:</div>
+      </template>
 
-          <!-- Hours -->
-          <div class="time-block">
-            <div class="time-number">{{ hours }}</div>
-            <div class="time-label">Hours</div>
-          </div>
+      <p v-else-if="phase === 'live'" class="countdown-live">
+        The Faire is on. Come and see.
+      </p>
 
-          <div class="time-separator">:</div>
-
-          <!-- Minutes -->
-          <div class="time-block">
-            <div class="time-number">{{ minutes }}</div>
-            <div class="time-label">Minutes</div>
-          </div>
-
-          <div class="time-separator">:</div>
-
-          <!-- Seconds -->
-          <div class="time-block">
-            <div class="time-number">{{ seconds }}</div>
-            <div class="time-label">Seconds</div>
-          </div>
-        </div>
-
-        <div class="blueprint-footer">
-          <p v-if="!eventStarted" class="countdown-announcement">
-            📢 Maker Faire Kochi launches on <strong>Jan 26, 2027</strong>. Prepare your projects, build teams, and get ready!
-          </p>
-          <p v-else class="countdown-announcement celebrating">
-            🎉 The Event is Live! Welcome to Maker Faire Kochi 2027!
-          </p>
-        </div>
-      </div>
+      <p v-else class="countdown-live countdown-ended">
+        That&rsquo;s a wrap. Thank you, Kochi.
+      </p>
     </div>
   </section>
 </template>
 
 <style scoped>
+/* Dark ground on purpose: it gives the page a rhythm between the white hero,
+   this band, and the white DOMAIN section, rather than one unbroken sheet. */
 .countdown-section {
-  padding: 5rem 0;
-  background-color: var(--color-dark);
-  border-bottom: var(--border-width-thick) solid var(--color-dark);
+  background-color: var(--color-ink);
   color: var(--color-white);
-  overflow: hidden;
 }
 
-.blueprint-box {
-  position: relative;
-  border: 3px dashed var(--color-cyan);
-  border-radius: 8px;
-  padding: 3rem 2rem;
-  background-color: rgba(0, 174, 239, 0.05); /* very light cyan overlay */
-  overflow: hidden;
-}
-
-.blueprint-grid-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-size: 20px 20px;
-  background-image: 
-    linear-gradient(to right, rgba(0, 174, 239, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 174, 239, 0.04) 1px, transparent 1px);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.blueprint-header {
-  position: relative;
-  z-index: 2;
+.countdown-inner {
   display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(0, 174, 239, 0.3);
-  padding-bottom: 1rem;
-  margin-bottom: 2.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+}
+
+.countdown-title {
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  color: var(--color-white);
+  max-width: 22ch;
+}
+
+.countdown-title-accent {
   color: var(--color-cyan);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+}
+
+/* Deliberately NOT var(--font-headline). Bungee is wide enough that this line
+   wraps mid-date at 390px, and its weight reads shoutier than a date needs to
+   be — the point here is legibility, not volume. Outfit 700 at this size is
+   unmistakably the primary line without raising its voice. */
+.countdown-date {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--color-white);
+  margin-top: -0.5rem;
+}
+
+.countdown-when {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: -0.75rem;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--color-muted-on-dark);
+}
+
+.countdown-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--color-cyan);
+}
+
+.countdown-eyebrow {
+  margin-bottom: -0.75rem;
+  color: var(--color-muted-on-dark);
 }
 
 .countdown-grid {
-  position: relative;
-  z-index: 2;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
+  gap: 0.75rem;
 }
 
+/* Demoted to a secondary readout. These are the ephemeral figures; the date
+   above is the fact. */
 .time-block {
-  text-align: center;
-  flex: 1;
-  max-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 5.25rem;
+  padding: 1rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background-color: var(--color-charcoal);
-  border: var(--border-width-thin) solid var(--color-cyan);
-  box-shadow: 4px 4px 0px var(--color-cyan);
-  padding: 1.5rem 1rem;
-  border-radius: 4px;
 }
 
 .time-number {
   font-family: var(--font-headline);
-  font-size: 3.5rem;
-  color: var(--color-yellow);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   line-height: 1;
-  margin-bottom: 0.5rem;
+  color: var(--color-cyan);
+  /* The seconds box would jitter every tick without tabular figures. */
+  font-variant-numeric: tabular-nums;
 }
 
 .time-label {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  color: var(--color-gray-400);
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.12em;
+  color: var(--color-muted-on-dark);
 }
 
-.time-separator {
+.countdown-live {
   font-family: var(--font-headline);
-  font-size: 3.5rem;
-  color: var(--color-cyan);
-  animation: blink 1s step-end infinite;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  color: var(--color-red-on-dark);
 }
 
-.blueprint-footer {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  border-top: 1px solid rgba(0, 174, 239, 0.3);
-  padding-top: 1.5rem;
+/* Past tense, so it recedes rather than announcing itself. */
+.countdown-ended {
+  color: var(--color-muted-on-dark);
 }
 
-.countdown-announcement {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  color: var(--color-light);
-}
-
-.countdown-announcement strong {
-  color: var(--color-red);
-}
-
-.celebrating {
-  color: var(--color-yellow);
-  font-size: 1.3rem;
-  font-weight: bold;
-}
-
-@keyframes blink {
-  50% { opacity: 0; }
-}
-
-@media (max-width: 768px) {
-  .blueprint-box {
-    padding: 2rem 1rem;
-  }
-  
-  .countdown-grid {
-    gap: 0.5rem;
-  }
-  
-  .time-block {
-    padding: 1rem 0.5rem;
-  }
-  
-  .time-number {
-    font-size: 2.2rem;
-  }
-  
-  .time-separator {
-    font-size: 2rem;
-  }
-  
-  .blueprint-header {
+/* Same reason as the hero band: once these two facts wrap onto separate lines
+   the dot between them is stranded at the end of the first line, separating
+   nothing. Stack them and drop it. */
+@media (max-width: 560px) {
+  .countdown-when {
     flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .countdown-dot {
+    display: none;
   }
 }
 
 @media (max-width: 480px) {
-  .countdown-grid {
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-  }
-  
   .time-block {
-    flex: none;
-    width: calc(50% - 0.5rem); /* Render as 2x2 grid */
-    max-width: none;
+    min-width: 0;
+    flex: 1 1 40%;
     padding: 1rem 0.5rem;
-    box-shadow: 3px 3px 0px var(--color-cyan);
-  }
-  
-  .time-separator {
-    display: none; /* Hide separators in 2x2 format */
-  }
-  
-  .time-number {
-    font-size: 2rem;
   }
 }
 </style>

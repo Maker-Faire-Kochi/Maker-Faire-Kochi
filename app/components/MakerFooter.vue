@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { Check } from '@lucide/vue'
 
 const email = ref('')
 const subscribed = ref(false)
@@ -66,9 +67,10 @@ const handleSubscribe = () => {
             </button>
           </form>
           
-          <div v-else class="subscribe-success">
-            🎉 Awesome! We'll keep you posted on Maker Faire Kochi 2027.
-          </div>
+          <p v-else class="subscribe-success" role="status">
+            <Check class="subscribe-check" :size="18" :stroke-width="2.5" aria-hidden="true" />
+            You're on the list. We'll keep you posted.
+          </p>
         </div>
       </div>
 
@@ -93,6 +95,7 @@ const handleSubscribe = () => {
   color: var(--color-white);
   border-top: var(--border-width-thick) solid var(--color-dark);
   padding: 5rem 0 3rem 0;
+  padding-bottom: calc(var(--rail-h) + 2rem + env(safe-area-inset-bottom));
   font-family: var(--font-body);
 }
 
@@ -158,7 +161,7 @@ const handleSubscribe = () => {
 .column-title {
   font-size: 1.2rem;
   margin-bottom: 1.5rem;
-  color: var(--color-yellow);
+  color: var(--color-cyan);
 }
 
 .link-list {
@@ -203,10 +206,15 @@ const handleSubscribe = () => {
   color: var(--color-white);
   font-family: var(--font-body);
   font-size: 1rem;
+  border-radius: var(--radius-pill);
 }
 
+/* No `outline: none` here. It suppressed the global focus ring and left the 1px
+   border swapping white for cyan as the ONLY indicator — 2.53:1 across a single
+   pixel, which is not a focus indicator. The global `.maker-footer
+   :focus-visible` rule paints a real 2px cyan ring; the border shift is now just
+   reinforcement rather than the whole signal. */
 .newsletter-input:focus {
-  outline: none;
   border-color: var(--color-cyan);
 }
 
@@ -214,14 +222,23 @@ const handleSubscribe = () => {
   width: 100%;
   justify-content: center;
   border-color: var(--color-white);
-  box-shadow: 4px 4px 0px var(--color-white);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-pill);
 }
 
 .newsletter-btn:hover {
-  box-shadow: 6px 6px 0px var(--color-cyan);
+  box-shadow: var(--shadow-soft);
+}
+
+.subscribe-check {
+  color: var(--color-cyan);
+  flex-shrink: 0;
 }
 
 .subscribe-success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   background-color: rgba(0, 174, 239, 0.1);
   border: var(--border-width-thin) solid var(--color-cyan);
   color: var(--color-cyan);
@@ -239,7 +256,7 @@ const handleSubscribe = () => {
   align-items: flex-start;
   gap: 3rem;
   font-size: 0.85rem;
-  color: var(--color-gray-600);
+  color: var(--color-muted-on-dark);
 }
 
 .legal-text {
@@ -261,7 +278,7 @@ const handleSubscribe = () => {
 }
 
 .credits .highlight {
-  color: var(--color-yellow);
+  color: var(--color-cyan);
 }
 
 @media (max-width: 992px) {

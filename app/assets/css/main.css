@@ -1,35 +1,85 @@
 /* Core Design System for MakerFaire Kochi 2027 */
 
-@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap');
-
 :root {
-  --color-red: #EA002A;
-  --color-cyan: #00AEEF;
-  --color-yellow: #FFD100;
-  --color-dark: #121214;
-  --color-charcoal: #1E1E22;
-  --color-light: #F8F9FA;
-  --color-white: #FFFFFF;
-  --color-gray-100: #F1F3F5;
-  --color-gray-200: #E9ECEF;
+  --color-red:           #ED1C24;
+  --color-red-cta:       #C4121A;
+  --color-red-on-dark:   #FF5A5F;
+  --color-cyan:          #00AEEF;
+  --color-ink:           #292929;
+  --color-charcoal:      #1F1F1F;
+  --color-surface:       #F3F3F3;
+  --color-white:         #FFFFFF;
+  --color-muted:         #5A6169;
+  --color-muted-on-dark: #A8AEB5;
+  --color-hairline:      #E3E3E3;
+
+  --color-dark:     var(--color-ink);
+  --color-light:    var(--color-white);
+  --color-gray-100: #F7F7F7;
+  --color-gray-200: #EDEDED;
   --color-gray-400: #CED4DA;
-  --color-gray-600: #6C757D;
-  --color-gray-800: #343A40;
+  --color-gray-600: var(--color-muted);
+  --color-gray-800: #3A3F45;
   
   --font-headline: 'Bungee', sans-serif;
   --font-body: 'Outfit', sans-serif;
   --font-mono: 'Space Grotesk', sans-serif;
   
-  --border-width-thick: 4px;
-  --border-width-thin: 2px;
+  --border-width-thick: 1px;
+  --border-width-thin: 1px;
   
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
-  --shadow-maker: 6px 6px 0px var(--color-dark);
-  --shadow-maker-red: 6px 6px 0px var(--color-red);
-  --shadow-maker-cyan: 6px 6px 0px var(--color-cyan);
-  --shadow-maker-yellow: 6px 6px 0px var(--color-yellow);
+  --shadow-soft:    0 1px 2px rgba(41,41,41,.06), 0 4px 12px rgba(41,41,41,.10);
+  --shadow-soft-lg: 0 2px 4px rgba(41,41,41,.06), 0 12px 32px rgba(41,41,41,.14);
+  --rail-h: 56px;
+
+  /* ── HERO SCENE DARKNESS — tune it here, nowhere else ─────────────────────
+     0 = untouched scene, 1 = black. The hero scrim is built from this single
+     value, so this is the only number to change.
+
+     RE-MEASURED 2026-08-27 against the live vector scene, which replaced the
+     AI film. Different artwork, different ground — the old film's numbers did
+     not transfer. Method and script: remotion/scripts/measure-contrast.cjs,
+     sampling 12,800 pixels across the band the type actually covers.
+
+       dim    white worst-case    ink worst-case
+       0.00        1.00                1.00
+       0.15        1.41                1.00
+       0.50        3.98                1.00
+       0.58        5.32  ✓             1.00
+       0.65        6.98  ✓             1.00
+
+     Two things changed versus the film, and both matter:
+
+     1. INK TEXT IS NO LONGER VIABLE AT ANY DIM. The old film's ground was
+        uniformly pale, so ink worked below 0.15. The vector scene contains
+        solid near-ink masses — hair, trousers, figure outlines at #292929 —
+        directly under the type, and ink on ink is 1.00:1. There is no dim
+        value that rescues it. Do not "restore" the old 0.00-0.15 ink band.
+
+     2. The white floor moved UP. 0.50 now measures 3.98:1, below the 4.5
+        floor — it passed against the film. The usable white band is 0.55+.
+
+     --hero-dim: 0.58 is therefore the minimum with real margin, not a mood
+     choice. Lowering it to show more of the artwork drops the headline below
+     WCAG AA. Re-run measure-contrast.cjs after ANY change to the scene's
+     palette or composition; new art invalidates these numbers again. */
+  --hero-dim: 0.58;
+  --hero-ink: var(--color-white);
+  --glass-bg: rgba(255,255,255,0.72);
+  --glass-stroke: rgba(41,41,41,0.10);
+  --glass-blur: 14px;
+  --radius-pill: 999px;
+  --ease-out: cubic-bezier(.22,1,.36,1);
+  --dur-fast: 160ms;
+  --dur-mid: 280ms;
+
+  --shadow-maker: var(--shadow-soft);
+  --shadow-maker-red: var(--shadow-soft);
+  --shadow-maker-cyan: var(--shadow-soft);
+  --shadow-maker-yellow: var(--shadow-soft);
 }
 
 /* Reset and Base Styles */
@@ -41,6 +91,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-bottom: calc(var(--rail-h) + 2rem + env(safe-area-inset-bottom));
   background-color: var(--color-light);
   color: var(--color-dark);
   font-family: var(--font-body);
@@ -69,15 +120,47 @@ a {
   text-decoration: none;
 }
 
-/* Grid Background Effect (Maker Space Drawing Board) */
-.maker-grid-bg {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+/* Browser-owned surfaces. These ship with defaults belonging to no design
+   system, and they are the clearest tell that a page was assembled rather than
+   built. Theme them from the palette. */
+::selection {
+  background-color: var(--color-cyan);
+  color: var(--color-ink);
 }
 
-/* Retro-Futuristic Maker Buttons */
+html {
+  caret-color: var(--color-red-cta);
+  scrollbar-color: var(--color-gray-400) transparent;
+}
+
+/* Dark sections invert the selection so it stays legible there too. */
+.countdown-section ::selection,
+.maker-footer ::selection {
+  background-color: var(--color-cyan);
+  color: var(--color-ink);
+}
+
+:where(a, button, input, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Every dark ground, not just two of them. The hero was missing, so focusing
+   either hero CTA drew an ink ring on an ink-dark scene — a keyboard user got no
+   visible focus change at all on the first two controls of the page. */
+.net-hero :focus-visible,
+.countdown-section :focus-visible,
+.maker-footer :focus-visible {
+  outline-color: var(--color-cyan);
+}
+
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+/* Maker Buttons */
 .btn-maker {
   display: inline-flex;
   align-items: center;
@@ -87,53 +170,49 @@ a {
   font-weight: 700;
   font-size: 1.1rem;
   text-transform: uppercase;
-  border: var(--border-width-thick) solid var(--color-dark);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
   background-color: var(--color-white);
   color: var(--color-dark);
   cursor: pointer;
   position: relative;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-  box-shadow: var(--shadow-maker);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  box-shadow: var(--shadow-soft);
 }
 
 .btn-maker-primary {
-  background-color: var(--color-red);
+  background-color: var(--color-red-cta);
   color: var(--color-white);
 }
 
 .btn-maker-secondary {
   background-color: var(--color-cyan);
-  color: var(--color-dark);
-}
-
-.btn-maker-accent {
-  background-color: var(--color-yellow);
-  color: var(--color-dark);
+  color: var(--color-ink);
 }
 
 .btn-maker:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0px var(--color-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft-lg);
 }
 
 .btn-maker:active {
-  transform: translate(2px, 2px);
-  box-shadow: 4px 4px 0px var(--color-dark);
+  transform: translateY(0);
 }
 
 /* Maker Cards & Badges */
 .card-maker {
   background-color: var(--color-white);
-  border: var(--border-width-thick) solid var(--color-dark);
-  box-shadow: var(--shadow-maker);
+  border: 1px solid var(--color-hairline);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
   padding: 2rem;
   position: relative;
   transition: transform var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .card-maker:hover {
-  transform: translateY(-4px);
-  box-shadow: 10px 10px 0px var(--color-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft-lg);
 }
 
 .badge-maker {
@@ -143,24 +222,20 @@ a {
   font-weight: 700;
   font-size: 0.85rem;
   text-transform: uppercase;
-  border: var(--border-width-thin) solid var(--color-dark);
-  box-shadow: 2px 2px 0px var(--color-dark);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  box-shadow: none;
   margin-bottom: 1rem;
 }
 
 .badge-maker-red {
-  background-color: var(--color-red);
+  background-color: var(--color-red-cta);
   color: var(--color-white);
 }
 
 .badge-maker-cyan {
   background-color: var(--color-cyan);
-  color: var(--color-dark);
-}
-
-.badge-maker-yellow {
-  background-color: var(--color-yellow);
-  color: var(--color-dark);
+  color: var(--color-ink);
 }
 
 /* Layout Utilities */
@@ -208,6 +283,56 @@ a {
 .text-outline {
   color: transparent;
   -webkit-text-stroke: 2px var(--color-dark);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-size: .8rem;
+  color: var(--color-muted);
+}
+
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* :focus, not only :focus-visible — a skip link must reveal for any focus,
+   including programmatic focus from assistive tech. */
+.skip-link:focus,
+.skip-link:focus-visible {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 200;
+  width: auto;
+  height: auto;
+  padding: .75rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: var(--color-ink);
+  color: var(--color-white);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-spin-slow, .animate-float {
+    animation: none;
+  }
 }
 
 /* Responsive fixes */
