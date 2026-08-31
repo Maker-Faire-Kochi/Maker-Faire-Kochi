@@ -22,16 +22,21 @@ const LIBRARY = require('../cast.cjs');
 const SEED = 20270126;   // the dates on the tin
 
 /**
- * The pose POOL, cut from twelve to five.
+ * The pose POOL, cut from twelve to four.
  *
  * Each unique pose is ~20-35 KB of path data in <defs> and the crowd was 83%
- * of the generated component. These five were kept for silhouette and for
- * who they represent: crossed arms (Turban), upright (Short), an older
- * figure (GrayMedium + glasses), Hijab, and a pointing figure (Long).
+ * of the generated component. Only st_easing and st_point are pool-only:
+ * st_arms, st_pants and st_blazer are ALSO used by hand-placed figures (the
+ * apron pair and the ladder figure), so dropping one of those would leave it
+ * in <defs> and save nothing. Between the two pool-only poses, st_easing is the
+ * hijab-wearing figure and is kept for representation; st_point was described
+ * by gesture rather than by who it represents. Dropping st_point frees about
+ * 24.9 KB of <defs>.
+ *
  * cast.cjs deliberately keeps all its entries — it is the enumerated list of
  * verified react-peeps keys, and an entry nobody places emits zero bytes.
  */
-const POOL = ['st_arms', 'st_pants', 'st_blazer', 'st_easing', 'st_point'];
+const POOL = ['st_arms', 'st_pants', 'st_blazer', 'st_easing'];
 const STANDING = POOL;
 
 /**

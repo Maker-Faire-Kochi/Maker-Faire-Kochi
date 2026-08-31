@@ -9,7 +9,7 @@
  * many values shuffleDeck() draws from the RNG: editing POOL or ANY zone count
  * reshuffles every zone, including ones whose counts were never touched.
  *
- * That is not hypothetical. Cutting the pool from twelve poses to five moved a
+ * That is not hypothetical. Cutting the pool from twelve poses down moved a
  * pooled figure to within 7 units of the fixed back-view visitor at x=340,
  * against the >=31 the source claims. Nothing else in the pipeline would have
  * caught it: scene:grounded only looks at machines, and a pose-identity check

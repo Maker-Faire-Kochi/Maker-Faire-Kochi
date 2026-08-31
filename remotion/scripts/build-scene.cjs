@@ -10,7 +10,7 @@
  *
  * 1. FIGURES ARE INSTANCED. Each unique person is emitted once into <defs>
  *    and placed with <use>, and ONLY the poses actually placed are emitted --
- *    so the current 13-strong crowd costs six figures, not the cast's 19.
+ *    so the current 13-strong crowd costs five figures, not the cast's 19.
  *    Internal <use> references are universally supported; only external-file
  *    references are a portability problem.
  *

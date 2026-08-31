@@ -27,10 +27,23 @@ const CAST = require('./cast.cjs');
 const Peep = RP.default;
 const OUT = path.join(__dirname, '..', 'out', 'figures');
 
-/** Round every coordinate to 1dp. The viewBox is 850x1200 and figures display
- *  200-400px tall, so 1dp is comfortably sub-pixel at any DPR -- and it cuts
- *  the path data by roughly a third. */
-const round1 = s => s.replace(/-?\d+\.\d+/g, m => String(Math.round(parseFloat(m) * 10) / 10));
+/** Round every coordinate in extracted peep markup to an integer. Figures are
+ *  mapped to about 250 scene units tall from a roughly 2930-unit native space,
+ *  so a half-unit rounding error lands at about 0.045 scene units. Measured
+ *  saving: 46.8 KB off the generated component (207.7 KB down to 160.9 KB), at
+ *  RMSE 0.0037 measured against visibly-different control frames of 0.228 to
+ *  0.257.
+ *
+ *  This applies ONLY to extracted peep markup. Machine geometry lives in
+ *  1920x1080 scene space where one unit IS visible on screen, and it is rounded
+ *  separately by r1() in scene/geometry.cjs. Do not generalise this helper to
+ *  machine geometry.
+ *
+ *  Audit: across all 34 extracted figures the only attributes carrying decimal
+ *  numbers are d and transform, and every transform is a pure translate().
+ *  There is no scale() factor that integer rounding could collapse to zero, and
+ *  no fractional stroke-width. */
+const roundInt = s => s.replace(/-?\d+\.\d+/g, m => String(Math.round(parseFloat(m))));
 
 fs.mkdirSync(OUT, {recursive: true});
 
@@ -56,7 +69,7 @@ for (const c of CAST) {
   }
 
   // Keep only the inner content; the scene supplies its own root <svg>.
-  const inner = round1(markup.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''));
+  const inner = roundInt(markup.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''));
   fs.writeFileSync(path.join(OUT, `${c.id}.svg`), inner);
   manifest.push({id: c.id, bytes: inner.length});
   console.log(`${c.id.padEnd(10)} ${String(inner.length).padStart(6)} bytes  ${c.body}`);

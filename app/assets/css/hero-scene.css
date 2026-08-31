@@ -221,21 +221,21 @@
    The in-page pause control was removed at the owner's request, so its
    `.is-paused` selector block went with it rather than being left as dead CSS.
 
-   `is-ready` is now driven by three conditions in NetHero.vue -- mounted, not
-   Save-Data, and in the viewport -- so the scene also suspends once it scrolls
-   off screen. That is NOT a WCAG 2.2.2 pause mechanism: the visitor does not
-   control it, and scrolling back re-starts the motion on its own.
+   Motion has two orthogonal axes. `is-ready` answers WHETHER MOTION IS ALLOWED
+   AT ALL -- mounted, and not Save-Data -- and remains the single authority for
+   that. `is-offscreen` answers WHETHER IT IS CURRENTLY RUNNING by pausing the
+   scene outside the viewport. That is NOT a WCAG 2.2.2 pause mechanism: the
+   visitor does not control it, and scrolling back resumes the motion on its own.
    `prefers-reduced-motion` below is still the only real accommodation, and the
    absence of an in-page control remains a known, accepted gap.
 
-   If a pause control is ever restored, it needs to re-list EVERY animated
-   class by name: animation-play-state is not inherited, so pausing an
-   ancestor pauses nothing.
+   The wildcard off-screen rule changes only whether animations run, so the
+   15-class `is-ready` list stays the single authority on WHAT animates.
  * ------------------------------------------------------------------ */
 
-/* No JavaScript: the scene must not animate at all, because the pause control
-   is a client component and would never arrive to stop it. Animation is opted
-   IN by the hydration class rather than opted out. */
+/* No JavaScript: the scene must not animate at all. Motion is allowed only after
+   mount and the client-side Save-Data check, so animation is opted IN by the
+   hydration class rather than opted out. */
 .hero-stage:not(.is-ready) .is-animated,
 .hero-stage:not(.is-ready) .peep,
 .hero-stage:not(.is-ready) .cog,
@@ -254,14 +254,35 @@
   animation: none;
 }
 
-/* Release the compositing layer whenever the scene is not moving — no-JS,
-   Save-Data, or scrolled out of view. `will-change: transform` on .camera is
-   the scene's one performance lever (see above), but it holds a full-viewport
-   texture for ~186k characters of path geometry, and holding that for a scene
-   that is standing still is pure cost. */
+/* Release the compositing layer whenever motion is not allowed — no-JS or
+   Save-Data. `will-change: transform` on .camera is the scene's one performance
+   lever (see above), but it holds a full-viewport texture for ~186k characters
+   of path geometry, and holding that for a scene that is standing still is pure
+   cost. */
 .hero-stage:not(.is-ready) .camera {
   will-change: auto;
 }
+
+/* Off-screen suspension PAUSES rather than removes animations, because removing
+   an animation and re-adding it restarts at t=0, which made scrolling back to
+   the hero restart the whole scene.
+
+   The specificity is load-bearing. This selector is (0,3,0). Every per-class
+   rule such as `.hero-scene .cog` is (0,2,0) and declares the ANIMATION
+   SHORTHAND, which resets animation-play-state to running. Any lower-specificity
+   approach, including a `.hero-scene *` rule driven by an inherited custom
+   property, would silently never apply.
+
+   It ties at (0,3,0) with the `.hero-stage:not(.is-ready)` suppression block,
+   so it MUST remain after that block in source order. The
+   `prefers-reduced-motion` block's `animation: none !important` still wins over
+   this, which is correct: nothing runs there at all.
+
+   Releasing will-change on the camera matters here too, because a paused
+   animation still holds its compositor layer otherwise, which defeats the point
+   of suspending off-screen. */
+.hero-stage.is-offscreen .hero-scene * { animation-play-state: paused; }
+.hero-stage.is-offscreen .camera { will-change: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-scene .is-animated,

@@ -24,7 +24,8 @@
     "scene:check": "node scripts/check-periods.cjs",
     "scene:isolate": "node scripts/isolate.cjs",
     "scene:grounded": "node scripts/check-grounded.cjs",
-    "scene:spacing": "node scripts/check-spacing.cjs"
+    "scene:spacing": "node scripts/check-spacing.cjs",
+    "scene:resume": "node scripts/check-resume.cjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.517",
