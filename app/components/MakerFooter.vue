@@ -1,19 +1,19 @@
 <script setup>
-import { ref } from 'vue'
-import { Check } from '@lucide/vue'
+import { Mail } from '@lucide/vue'
+import { CONTACT_EMAIL, INSTAGRAM_URL } from '~/composables/useCountdown'
 
-const email = ref('')
-const subscribed = ref(false)
-
-const handleSubscribe = () => {
-  if (email.value.trim()) {
-    subscribed.value = true
-    email.value = ''
-    setTimeout(() => {
-      subscribed.value = false
-    }, 5000)
-  }
-}
+/**
+ * The newsletter form was REMOVED at the owner's request. It is worth knowing
+ * what it actually did: `handleSubscribe` set a flag, cleared the field, showed
+ * "You're on the list", and reset after five seconds. It never sent anything
+ * anywhere -- there was no endpoint and no storage, so every address typed into
+ * it was silently discarded. Removing it is the honest outcome; wiring it to a
+ * real provider would have been the other one.
+ *
+ * If a form ever returns here, RESTORE THE NAV RAIL'S KEYBOARD AVOIDANCE with
+ * it (see MakerHeader.vue) -- that logic existed solely because this input sat
+ * under a fixed bottom rail on phones.
+ */
 </script>
 
 <template>
@@ -21,56 +21,73 @@ const handleSubscribe = () => {
     <div class="container footer-container">
       <div class="footer-top">
         <div class="footer-brand-column">
-          <div class="footer-logo">
-            Make<span class="colon">:</span> Maker Faire <span class="location">Kochi</span>
-          </div>
+          <!-- The real lockup, not a Bungee approximation of it. This was
+               typeset as "Make:" + "Maker Faire" + "Kochi" with a red colon and
+               cyan city, which is a redrawing of a licensed trademark in the
+               wrong typeface -- and it drifts from the official mark every time
+               anyone touches the CSS. Same <picture> pattern as the hero. -->
+          <picture>
+            <source srcset="/img/logo/mf-kochi-long@2x.webp 2x, /img/logo/mf-kochi-long.webp 1x" type="image/webp" />
+            <img
+              src="/img/logo/mf-kochi-long.png"
+              width="216"
+              height="36"
+              class="footer-logo"
+              alt="Maker Faire Kochi"
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
           <p class="brand-desc">
             A celebration of the maker movement, bringing engineers, crafters, artists, and innovators together in Kerala.
           </p>
+          <!-- Was the literal text "X" / "IG" / "YT" in three boxes, pointing at
+               twitter.com/makerfaire, instagram.com/makerfaire and
+               youtube.com/makerfaire -- the GLOBAL Make Community accounts, not
+               this faire's. Two real destinations now.
+
+               The Instagram glyph is an inline SVG because @lucide/vue ships no
+               brand icons (Instagram, Twitter and Youtube are simply not
+               exported). Mail is a Lucide icon, so the two match in weight. -->
           <div class="social-links">
-            <a href="https://twitter.com/makerfaire" target="_blank" rel="noopener" class="social-icon" aria-label="Twitter">
-              X
+            <a :href="INSTAGRAM_URL" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Maker Faire Kochi on Instagram">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
             </a>
-            <a href="https://instagram.com/makerfaire" target="_blank" rel="noopener" class="social-icon" aria-label="Instagram">
-              IG
-            </a>
-            <a href="https://youtube.com/makerfaire" target="_blank" rel="noopener" class="social-icon" aria-label="YouTube">
-              YT
+            <a :href="`mailto:${CONTACT_EMAIL}`" class="social-icon" aria-label="Email Maker Faire Kochi">
+              <Mail :size="20" :stroke-width="2" aria-hidden="true" />
             </a>
           </div>
         </div>
 
         <div class="footer-links-column">
-          <h4 class="column-title">Quick Links</h4>
+          <h4 class="column-title subhead">Quick Links</h4>
           <ul class="link-list">
             <li><a href="#about" class="footer-link">About the Event</a></li>
-            <li><a href="#countdown" class="footer-link">Countdown status</a></li>
             <li><a href="#categories" class="footer-link">Exhibition Themes</a></li>
-            <li><a href="https://forms.gle/makerfairekochi2027" target="_blank" rel="noopener noreferrer" class="footer-link">Submit a Project</a></li>
+            <li><a href="#countdown" class="footer-link">Countdown status</a></li>
           </ul>
         </div>
 
-        <div class="footer-newsletter-column">
-          <h4 class="column-title">Get Event Updates</h4>
-          <p class="newsletter-desc">Subscribe to get notified about tickets, schedules, and key announcements.</p>
-          
-          <form v-if="!subscribed" @submit.prevent="handleSubscribe" class="newsletter-form">
-            <input 
-              v-model="email" 
-              type="email" 
-              placeholder="your.email@example.com" 
-              required 
-              class="newsletter-input" 
-            />
-            <button type="submit" class="btn-maker btn-maker-primary newsletter-btn">
-              Subscribe
-            </button>
-          </form>
-          
-          <p v-else class="subscribe-success" role="status">
-            <Check class="subscribe-check" :size="18" :stroke-width="2.5" aria-hidden="true" />
-            You're on the list. We'll keep you posted.
-          </p>
+        <!-- Replaces the newsletter column. With the proposal CTAs removed there
+             was otherwise NO way to contact the faire anywhere on the site. -->
+        <div class="footer-contact-column">
+          <h4 class="column-title subhead">Contact</h4>
+          <a :href="`mailto:${CONTACT_EMAIL}`" class="contact-email">{{ CONTACT_EMAIL }}</a>
         </div>
       </div>
 
@@ -90,10 +107,13 @@ const handleSubscribe = () => {
 </template>
 
 <style scoped>
+/* Charcoal, not ink. The countdown section directly above is ink, and two
+   identical dark grounds stacked read as one slab with a heading floating in
+   the middle of it. #1F1F1F against #292929 is a quiet but real step. */
 .maker-footer {
-  background-color: var(--color-dark);
-  color: var(--color-white);
-  border-top: var(--border-width-thick) solid var(--color-dark);
+  background-color: var(--color-charcoal);
+  color: var(--label-on-dark);
+  border-top: 1px solid var(--separator-on-dark);
   padding: 5rem 0 3rem 0;
   padding-bottom: calc(var(--rail-h) + 2rem + env(safe-area-inset-bottom));
   font-family: var(--font-body);
@@ -101,31 +121,27 @@ const handleSubscribe = () => {
 
 .footer-top {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr 1fr;
+  grid-template-columns: 1.4fr 0.8fr 1fr;
   gap: 4rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--separator-on-dark);
   padding-bottom: 4rem;
   margin-bottom: 2.5rem;
 }
 
+/* The mark carries its own white plaque and cyan frame, so it needs no colour
+   handling on the dark ground -- and the whole --color-red vs --color-red-on-dark
+   question that the old typeset version raised simply goes away with it. */
 .footer-logo {
-  font-family: var(--font-headline);
-  font-size: 1.5rem;
-  margin-bottom: 1.2rem;
-  text-transform: uppercase;
-}
-
-.footer-logo .colon {
-  color: var(--color-red);
-}
-
-.footer-logo .location {
-  color: var(--color-cyan);
+  display: block;
+  width: 216px;
+  max-width: 100%;
+  height: auto;
+  margin-bottom: var(--sp-4);
 }
 
 .brand-desc {
   font-size: 0.95rem;
-  color: var(--color-gray-400);
+  color: var(--label-secondary-on-dark);
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
@@ -135,17 +151,23 @@ const handleSubscribe = () => {
   gap: 1rem;
 }
 
+/* Kept as the literal X / IG / YT strings rather than swapped for icons:
+   @lucide/vue ships no brand glyphs (verified -- Twitter, Instagram and
+   Youtube are simply not exported), and inventing lookalikes would be worse
+   than plain initials. Sized to a real 44px target instead. */
 .social-icon {
+  /* 44px is the control-size floor; there is no separate width/height, because
+     a 40px width under a 44px min-width is just a confusing way to write 44. */
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: var(--border-width-thin) solid var(--color-white);
-  background-color: var(--color-charcoal);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.9rem;
+  border: 1px solid var(--color-white);
+  /* INK, not charcoal. This chip used to be charcoal on an ink footer; the
+     footer is charcoal now, so charcoal-on-charcoal would have erased it.
+     Ink is the lighter of the two, so the step survives the swap. */
+  background-color: var(--color-ink);
   color: var(--color-white);
   transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
 }
@@ -158,10 +180,25 @@ const handleSubscribe = () => {
 }
 
 /* Links column */
+/* Was Bungee at 1.2rem in cyan. Three cyan display headings made the accent do
+   structural work; as sentence-case subheads they rank by weight instead, and
+   cyan is left for the small rule that marks the column. */
 .column-title {
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
-  color: var(--color-cyan);
+  position: relative;
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-2);
+  color: var(--label-on-dark);
+}
+
+/* The accent, as a mark beside the words instead of the words themselves. */
+.column-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 24px;
+  height: 2px;
+  background-color: var(--color-cyan);
 }
 
 .link-list {
@@ -172,81 +209,40 @@ const handleSubscribe = () => {
 }
 
 .footer-link {
-  color: var(--color-gray-400);
+  color: var(--label-secondary-on-dark);
   font-size: 1rem;
   transition: color var(--transition-fast);
   font-family: var(--font-mono);
-  text-transform: uppercase;
 }
 
 .footer-link:hover {
   color: var(--color-cyan);
-  padding-left: 4px;
+  text-decoration: underline;
 }
 
-/* Newsletter Column */
-.newsletter-desc {
-  font-size: 0.95rem;
-  color: var(--color-gray-400);
-  margin-bottom: 1.25rem;
-}
-
-.newsletter-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.newsletter-input {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  border: var(--border-width-thick) solid var(--color-white);
-  background-color: var(--color-charcoal);
-  color: var(--color-white);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  border-radius: var(--radius-pill);
-}
-
-/* No `outline: none` here. It suppressed the global focus ring and left the 1px
-   border swapping white for cyan as the ONLY indicator — 2.53:1 across a single
-   pixel, which is not a focus indicator. The global `.maker-footer
-   :focus-visible` rule paints a real 2px cyan ring; the border shift is now just
-   reinforcement rather than the whole signal. */
-.newsletter-input:focus {
-  border-color: var(--color-cyan);
-}
-
-.newsletter-btn {
-  width: 100%;
-  justify-content: center;
-  border-color: var(--color-white);
-  box-shadow: var(--shadow-soft);
-  border-radius: var(--radius-pill);
-}
-
-.newsletter-btn:hover {
-  box-shadow: var(--shadow-soft);
-}
-
-.subscribe-check {
-  color: var(--color-cyan);
-  flex-shrink: 0;
-}
-
-.subscribe-success {
-  display: flex;
+/* Contact column */
+/* The rule is text-decoration, NOT border-bottom. A border sits at the bottom
+   of the BOX, and the 44px minimum target makes that box far taller than the
+   text -- so the underline detached and floated well below the address. An
+   underline with an offset hugs the glyphs however tall the hit area is. */
+.contact-email {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: rgba(0, 174, 239, 0.1);
-  border: var(--border-width-thin) solid var(--color-cyan);
-  color: var(--color-cyan);
-  padding: 1rem;
-  border-radius: 4px;
+  min-height: 44px;
   font-family: var(--font-mono);
-  font-size: 0.95rem;
-  text-align: center;
+  font-size: 1rem;
+  color: var(--label-secondary-on-dark);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+  transition: color var(--transition-fast);
+  /* An email address is one long unbroken token; without this it overflows the
+     column at narrow widths instead of wrapping. */
+  overflow-wrap: anywhere;
+}
+
+.contact-email:hover {
+  color: var(--color-cyan);
 }
 
 /* Footer Bottom */

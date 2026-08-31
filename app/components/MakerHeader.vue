@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { Timer, Shapes, Info, Send } from '@lucide/vue'
+import { Timer, Shapes, Info } from '@lucide/vue'
 
 /**
  * Floating glass pill rail — the site's only navigation.
@@ -16,17 +16,35 @@ import { Timer, Shapes, Info, Send } from '@lucide/vue'
  *
  * `links` is the seam: adding the remaining sections later is a push here, not
  * a markup edit.
+ *
+ * KEYBOARD AVOIDANCE WAS REMOVED, and it must come back with any future form.
+ * This rail used to hide itself on phones whenever an <input> was focused and
+ * `visualViewport` shrank, because the on-screen keyboard pins a fixed bottom
+ * rail directly over the field being typed in. The only field on the site was
+ * the footer newsletter, which is gone, so the code was unreachable.
+ *
+ * If you add ANY input, textarea or contenteditable to this page, restore it --
+ * and key it off `visualViewport`, NOT focusin/focusout. Focus tracking looks
+ * simpler and is broken: removing a focused element (a v-if on submit, say)
+ * does not reliably fire focusout, so the rail stays hidden forever, taking the
+ * site's only navigation with it. visualViewport measures the keyboard itself
+ * and self-heals. Guard it with an activeElement check so a pinch zoom, which
+ * also shrinks the visual viewport, does not hide the nav.
+ */
+/**
+ * Order MUST match the page order. This is not cosmetic: recompute() below
+ * walks this array and keeps OVERWRITING `current`, so the last link whose
+ * section has crossed the 40% line wins. With the old order (countdown first)
+ * the countdown moving to the bottom of the page would leave "Domains"
+ * highlighted while the reader was actually in the countdown.
  */
 const links = [
-  { id: 'countdown', href: '#countdown', label: 'When', icon: Timer },
   { id: 'about', href: '#about', label: 'About', icon: Info },
   { id: 'categories', href: '#categories', label: 'Domains', icon: Shapes },
+  { id: 'countdown', href: '#countdown', label: 'When', icon: Timer },
 ]
 
-const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
-
 const activeId = ref<string>('')
-const railHidden = ref(false)
 
 /**
  * Active-section tracking.
@@ -62,30 +80,6 @@ function onScroll() {
   })
 }
 
-/**
- * The footer carries a newsletter <input>. On a phone, the on-screen keyboard
- * pins this fixed rail directly above itself, covering the field being typed in.
- *
- * This deliberately keys off visualViewport rather than focusin/focusout on the
- * form. Focus tracking looks simpler but is broken here: submitting the
- * newsletter flips `subscribed` and removes the focused button via v-if
- * (MakerFooter.vue), and removing a focused element does not reliably fire
- * focusout — so the rail would stay hidden permanently, taking the site's only
- * navigation with it.
- *
- * visualViewport measures the keyboard directly, so it self-heals no matter what
- * happens to the element that had focus. The activeElement check keeps a pinch
- * zoom, which also shrinks the visual viewport, from hiding the nav.
- */
-function syncRailForKeyboard() {
-  const vv = window.visualViewport
-  if (!vv) return
-  const el = document.activeElement
-  const typing =
-    !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || (el as HTMLElement).isContentEditable)
-  railHidden.value = typing && vv.height < window.innerHeight * 0.75
-}
-
 onMounted(() => {
   recompute()
   window.addEventListener('scroll', onScroll, { passive: true })
@@ -93,18 +87,16 @@ onMounted(() => {
   // changes, resizes and zoom would otherwise strand aria-current on the wrong
   // section until the next scroll.
   window.addEventListener('resize', onScroll, { passive: true })
-  window.visualViewport?.addEventListener('resize', syncRailForKeyboard)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('resize', onScroll)
-  window.visualViewport?.removeEventListener('resize', syncRailForKeyboard)
 })
 </script>
 
 <template>
-  <div class="rail-wrap" :class="{ 'is-hidden': railHidden }">
+  <div class="rail-wrap">
     <nav id="primary-nav" class="rail" aria-label="Primary">
       <a
         v-for="l in links"
@@ -120,16 +112,8 @@ onUnmounted(() => {
         <span v-if="activeId === l.id" class="pill-dot" aria-hidden="true"></span>
       </a>
 
-      <a
-        :href="PROPOSAL_URL"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="pill pill-cta"
-        aria-label="Join as Maker — submit a proposal"
-      >
-        <Send class="pill-icon" :size="18" :stroke-width="2" aria-hidden="true" />
-        <span class="pill-label">Join</span>
-      </a>
+      <!-- The "Join" CTA pill was removed with the rest of the proposal CTAs
+           (dead forms.gle link). Restore it here alongside the others. -->
     </nav>
   </div>
 </template>
@@ -146,22 +130,6 @@ onUnmounted(() => {
   justify-content: center;
   /* A full-width fixed wrapper would otherwise swallow every click in its band. */
   pointer-events: none;
-  /* visibility is delayed until the slide-out finishes, then applied instantly.
-     Without the delay `visibility: hidden` lands on frame one and the transition
-     is never seen; without visibility at all, the hidden rail stays in the tab
-     order and a keyboard user tabs into an invisible nav. */
-  transition: transform var(--dur-mid) var(--ease-out),
-    opacity var(--dur-mid) var(--ease-out),
-    visibility 0s linear 0s;
-}
-
-.rail-wrap.is-hidden {
-  transform: translateY(150%);
-  opacity: 0;
-  visibility: hidden;
-  transition: transform var(--dur-mid) var(--ease-out),
-    opacity var(--dur-mid) var(--ease-out),
-    visibility 0s linear var(--dur-mid);
 }
 
 .rail {
@@ -248,24 +216,6 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-/* The single background-coloured control on the page. #C4121A, not the brand
-   #ED1C24: a 14.4px bold label is not WCAG "large text", so it needs the full
-   4.5:1 — white on #ED1C24 is 4.38:1 and fails, white on #C4121A is 6.09:1. */
-.pill-cta {
-  background-color: var(--color-red-cta);
-  color: var(--color-white);
-  margin-left: 0.25rem;
-}
-
-.pill-cta:hover {
-  background-color: #A80E15;
-  transform: translateY(-1px);
-}
-
-.pill-cta:focus-visible {
-  outline-color: var(--color-red-cta);
-}
-
 @media (max-width: 480px) {
   /* Labels stay VISIBLE. An earlier version clipped them to icon-only here, but
      320px is also the reflow width a sighted low-vision user lands on at 200%
@@ -289,7 +239,6 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rail-wrap,
   .pill {
     transition: none;
   }

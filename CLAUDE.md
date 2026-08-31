@@ -185,7 +185,7 @@ photo; stalls people move between is a faire. Keep that structure when adding an
   visitors (`scene/backs.cjs`) are emitted INLINE instead: each is unique and used once, so
   `<use>` would save nothing, and they are ~2.6KB against ~25KB for a peep. This is a
   deliberate second convention, not an oversight — if back views ever repeat, instance them.
-  12 instances cost what 6 figures cost, because only the poses actually placed are emitted. *Internal* `<use>` is
+  12 instances cost what 5 figures cost, because only the poses actually placed are emitted. *Internal* `<use>` is
   universally supported — only external-file references are a portability problem (verified
   in Chrome; Safari's external-ref gap is why the whole scene is inline, not a sprite).
 - **Gear periods are NOT written in CSS.** `gearTower.cjs` derives radius from tooth count
@@ -210,14 +210,20 @@ photo; stalls people move between is a faire. Keep that structure when adding an
 - **The crowd is seeded, not hand-listed.** `SEED` in `placement.cjs` drives pose, height,
   mirroring and jitter. Deterministic on purpose: a scene that reshuffles every build is
   unreviewable and churns the committed output. Change `SEED` to reshuffle.
-- **The pose POOL is five, and changing it RESHUFFLES THE WHOLE CROWD.** `POOL` in
-  `placement.cjs` is an explicit list — `st_arms`, `st_pants`, `st_blazer`, `st_easing`,
-  `st_point` — not "every `st_*` in cast.cjs" as it used to be. It was cut from twelve because
-  `<defs>` was 83% of the generated component: one pose is 20–46KB of path data, and the whole
-  scene body (every machine, booth and prop) is smaller than two of them. Kept for silhouette
-  and for who they represent — Turban, Short, an older figure with grey hair and glasses,
-  Hijab, and a pointing figure. `cast.cjs` deliberately keeps ALL its entries: it is the
-  enumerated list of verified react-peeps keys and an unplaced entry emits nothing.
+- **The pose POOL is FOUR, and changing it RESHUFFLES THE WHOLE CROWD.** `POOL` in
+  `placement.cjs` is an explicit list — `st_arms`, `st_pants`, `st_blazer`, `st_easing` —
+  not "every `st_*` in cast.cjs" as it used to be. It was cut from twelve, then to four,
+  because `<defs>` dominates the generated component: one pose is 20–46KB of path data, and
+  the whole scene body (every machine, booth and prop) is smaller than two of them.
+  `cast.cjs` deliberately keeps ALL its entries: it is the enumerated list of verified
+  react-peeps keys and an unplaced entry emits nothing.
+
+  **Only a POOL-ONLY pose can actually be dropped.** `st_arms`, `st_pants` and `st_blazer`
+  are ALSO used by hand-placed figures (the apron pair and the ladder figure), so removing
+  one of those from `POOL` leaves it in `<defs>` and saves **nothing**. When `st_point` was
+  cut (2026-08-30) only it and `st_easing` were pool-only; `st_easing` was kept because it is
+  the hijab-wearing figure and these poses are chosen for who they represent, while
+  `st_point` was distinguished only by gesture. Check this before choosing a pose to cut.
 
   **The trap:** the pool size changes how many values `shuffleDeck()` draws from the RNG, so
   editing `POOL` — or any zone count — reshuffles EVERY zone, including ones whose counts you
@@ -380,8 +386,8 @@ photo; stalls people move between is a faire. Keep that structure when adding an
   name, because `animation-play-state` is not inherited and pausing an ancestor pauses nothing.
 
 - **MEASURED runtime cost (after the six-machine cut, 2026-08-29):** **42** running
-  animations, down from 112. SVG elements 928 → 598 → **492**, path data 397k → 186k →
-  **181k** chars (the last step is the 19→13 crowd cut).
+  animations, down from 112. SVG elements 928 → 598 → 492 → **477**, path data 397k → 186k →
+  181k → **116k** chars (19→13 crowd cut, then integer path rounding + one pose cut).
   The earlier contention figures still stand and still say the same thing: main-thread
   contention was 2% / −7.3% / −1.6% / 4% across four runs at 112 animations — negative meaning
   the static run was SLOWER than the animating one, i.e. the cost already sat below the
@@ -411,8 +417,8 @@ photo; stalls people move between is a faire. Keep that structure when adding an
 - **Pause/ready classes live on `.hero-stage` in `NetHero.vue`**, not on the scene — a server
   component cannot react to client state. The CSS crosses that boundary via descendant
   selectors in `assets/css/hero-scene.css`.
-- **Animation is opted IN via `is-ready`**, which is now DERIVED from three conditions
-  (`mounted && inViewport && !saveData`), not simply added on mount. Without it, no-JS
+- **Animation is opted IN via `is-ready`**, which is `mounted && !saveData` — NOT the
+  viewport. Off-screen suspension is a separate `is-offscreen` class that PAUSES. Without it, no-JS
   visitors would get motion they cannot stop, which is exactly what WCAG 2.2.2 prohibits.
   See "The scene suspends off-screen" below before changing how it is computed — assigning
   it from any single input has already broken the Save-Data opt-out once.
@@ -481,17 +487,30 @@ Re-measured 2026-08-29 after the six-machine cut **and the 19→13 crowd cut**, 
 
 | | raw | gzip | brotli |
 |---|---|---|---|
-| SSR HTML (inline scene included) | **237.6 KB** (was 248, 483) | **84.7 KB** | **69.9 KB** |
+| SSR HTML (inline scene included) | **173.3 KB** (was 237.6, 248, 483) | **60.4 KB** | **46.9 KB** |
+
+> The 2026-08-31 HIG redesign moved these by **+170 B raw / +76 B gzip / +49 B brotli**
+> (+0.10%) and took **191 B off the entry CSS**. That is noise against a 173 KB response,
+> which is the point: a visual refactor of five sections is not a payload event. The lever
+> is still `POOL`.
+
 | client JS (3 chunks) | 189 KB | 70 KB | — |
 | entry CSS | 27 KB | 5.7 KB | — |
 
 Where the saving came from, and it is worth knowing the ratio before optimising this scene
-again — the generated component went 444.8 → 217.6 → **207.7 KB**:
+again — the generated component went 444.8 → 217.6 → 207.7 → **143.4 KB**:
 
-| | original | after machine cut | after crowd cut |
-|---|---|---|---|
-| `<defs>` (unique Open Peeps figures) | 368.7 KB (13 poses) | 159.1 KB (6 poses) | **159.1 KB** (6 poses) |
-| scene body (every machine, booth, prop, `<use>`) | 74.4 KB | 57.9 KB | **48.6 KB** |
+| | original | after machine cut | after crowd cut | after rounding + pose cut |
+|---|---|---|---|---|
+| `<defs>` (unique Open Peeps figures) | 368.7 KB (13 poses) | 159.1 KB (6 poses) | 159.1 KB (6 poses) | **94.8 KB** (5 poses) |
+| scene body (every machine, booth, prop, `<use>`) | 74.4 KB | 57.9 KB | 48.6 KB | **48.6 KB** |
+
+**The biggest single win was PRECISION, not content.** Rounding extracted peep coordinates
+from 1dp to integers took 46.8 KB off with RMSE 0.0037 — against 0.225–0.251 for frames that
+differ visibly. Figures are mapped to ~250 scene units from a ~2930-unit native space, so a
+half-unit error lands at ~0.045 units. It applies ONLY to peep markup: machine geometry is in
+1920×1080 space where one unit IS visible, and is rounded separately by `r1()`. See
+`roundInt` in `extract-peeps.cjs`.
 
 Note what the third column does **not** move: cutting six people saved ~10 KB and left `<defs>`
 untouched, because all six poses stay in use. Removing figures is a legibility lever, not a
@@ -502,14 +521,15 @@ than every machine in the frame put together. Cutting eleven machines saved ~16 
 seven poses saved ~210 KB. Any future "make the hero lighter" work should start at `POOL`.
 
 - **The node server does NOT compress.** `curl -H 'Accept-Encoding: br'` returns the full
-  237.6 KB. Compression is the host's job — the deploy target is Netlify/Vercel/Cloudflare,
+  173.3 KB. Compression is the host's job — the deploy target is Netlify/Vercel/Cloudflare,
   which all brotli HTML automatically, so no `h3-compression` dependency was added.
   **A bare-node deploy would be a silent 3.5x regression on the largest response.**
 - `public/` went **13MB → 408KB**: every file in it was verified unreferenced by grepping
   each basename against `app/` + `nuxt.config.ts` (0 hits). All of `public/video/`,
   `hero.jpg`, `net-*`, `hero-scene-first.*` and four unused logo variants are gone.
-  **Kept on purpose:** `hero-scene-still.*` (see Save-Data above). What survives is
-  exactly the five files `app/` actually references, plus those three stills.
+  `hero-scene-still.{avif,webp,jpg}` were kept for a while for an unbuilt Save-Data hero and
+  were **deleted on 2026-08-30** — 261 KB deployed on every build and requested by nobody.
+  What survives is exactly the files `app/` actually references.
   Note what this did and did not buy: it shrank the **deploy**, not the page. No visitor
   was downloading any of it.
 - Google Fonts asks for `Outfit:wght@400;500;600;700`. It used to ask for 300 and 800 as
@@ -517,27 +537,56 @@ seven poses saved ~210 KB. Any future "make the hero lighter" work should start 
 
 ### The scene suspends off-screen — and that is NOT a WCAG fix
 
-`is-ready` on `.hero-stage` is **derived from three conditions** in `NetHero.vue`:
+**Motion has TWO ORTHOGONAL AXES.** Conflating them is what caused a real bug.
 
-    ready = mounted && inViewport && !saveData
+    is-ready     = mounted && !saveData      -- is motion ALLOWED at all
+    is-offscreen = !inViewport               -- is it CURRENTLY RUNNING
 
-An earlier draft assigned it straight from the IntersectionObserver entry, which
-**re-enabled the animation for Save-Data visitors** the moment the hero scrolled into
-view. If you touch this, keep it derived — an observer must never be the sole input.
+`is-ready` used to include `inViewport`, so scrolling the hero away removed every animation
+via `animation: none` — and **a re-added CSS animation restarts at t=0**. Scrolling back
+replayed the camera push-in and snapped every gear to its start. Measured before the fix:
+the camera clock read 633ms on screen, the animation was ABSENT off screen, and on return it
+read 467ms instead of resuming near 1600ms. After: 633ms → frozen at 667ms → resumes at
+1150ms.
 
-It toggles the *existing* `is-ready` class rather than adding a second one, so the
-exhaustive selector list in `hero-scene.css` stays the single authority on what animates.
-`animation-play-state` is not inherited, so a parallel mechanism means maintaining that
-list twice, and the second copy will drift.
+`npm run scene:resume` is the guard. `node scripts/check-resume.cjs legacy` toggles `is-ready`
+instead and must FAIL — that is the pre-fix behaviour, kept so the guard can be shown to
+actually detect the defect rather than merely passing.
 
-Measured: `top=112 away=0 back=112` running animations. `will-change` on `.camera` is
-now released too, so no compositor texture is retained for a scene standing still.
+The off-screen rule therefore PAUSES instead of removing:
+
+    .hero-stage.is-offscreen .hero-scene * { animation-play-state: paused; }
+
+**Its specificity is load-bearing.** It is (0,3,0). Every per-class rule such as
+`.hero-scene .cog` is (0,2,0) and declares the `animation` SHORTHAND, which resets
+`animation-play-state` to `running` — so any lower-specificity approach, including the
+obvious `.hero-scene *` rule driven by an inherited custom property, would **silently never
+apply**. It ties at (0,3,0) with the `:not(.is-ready)` block, so it MUST stay after it in
+source order. The `prefers-reduced-motion` block's `animation: none !important` still wins,
+which is correct.
+
+The wildcard is also why this does NOT duplicate the 15-class list: that list stays the
+single authority on WHAT animates; `is-offscreen` only decides whether it runs.
+
+An observer must never be the sole input to whether motion runs — an earlier draft let it
+re-enable animation for Save-Data visitors. That is now **structurally** guaranteed, not
+merely remembered: the observer drives only `is-offscreen`, which cannot grant motion.
+
+`will-change` on `.camera` is released for BOTH states — a paused animation still holds its
+compositor layer otherwise, which defeats the point of suspending.
+
+**Testing this needs a real clock and no reduced-motion.** `--virtual-time-budget` fakes the
+very clock being measured, and headless Chrome reports `prefers-reduced-motion: reduce` with
+no CLI flag able to override it, so the `!important` block wins and leaves zero animations to
+measure. A `play-state` of `running` with NO animation present is indistinguishable from
+healthy — `running` is the initial value. Read `document.getAnimations()` currentTime, over
+HTTP, with that media block stripped.
 
 **This does not close the WCAG 2.2.2 gap.** There is still no in-page pause control. The
-visitor does not control the off-screen suspension, and scrolling back re-starts the
-motion automatically, which is itself auto-starting motion. `prefers-reduced-motion`
-remains the only real accommodation, and the missing control is still a known, accepted
-gap. Do not let a future comment claim the observer fixed it.
+visitor does not control the off-screen suspension, and scrolling back resumes the motion
+automatically, which is itself auto-starting motion. `prefers-reduced-motion` remains the
+only real accommodation, and the missing control is still a known, accepted gap. Do not let
+a future comment claim the observer fixed it.
 
 **The animation cost was never the problem.** Style recalc measures 0.9–1.5ms per 1.6s
 window animating vs 0.1ms paused — ~0.06% of the main thread. The synthetic-contention
@@ -591,21 +640,204 @@ volume, with nothing in between. Ranking them is what makes them readable.
 - `.lead-text` is ink with a red rule down its left edge, not three lines of saturated
   `--color-red-cta`. Red stays an accent *beside* the words, which is what the palette
   reserves it for.
-- **Measure the grey, do not eyeball it.** `.domain-word` was `#AEB7C0` = **2.03:1**,
-  under even the 3:1 large-text floor, while its own comment insisted it must stay
-  readable. It is `#8D959D` = 3.04:1 now. A grey that *looks* recessive enough is exactly
-  how the previous value got to 2.03. Contrast helper:
-  `node` with the WCAG relative-luminance formula, not a vibe.
+- **Measure the grey, do not eyeball it — and re-measure when the GROUND moves.**
+  `.domain-word` was `#AEB7C0` = **2.03:1**, under even the 3:1 large-text floor, while
+  its own comment insisted it must stay readable. It became `#8D959D` = 3.04:1 **on white**.
+  It is now **`#828A92` = 3.27:1 on `--bg-grouped` (#F7F7F7)**.
+
+  That last move is the lesson: moving the Domains section onto the grouped ground silently
+  dropped the unchanged `#8D959D` to **2.83:1** — back under the floor — because *a contrast
+  figure belongs to a PAIR, not to a colour*. Nobody touched the text; the background moved
+  and took the measurement with it. Re-measure this pair if the section ground changes again.
+  Contrast helper: the WCAG relative-luminance formula, not a vibe.
 - `--color-gray-800` (#3A3F45) on white is **10.62:1**, not the ~9.4 an earlier note
   guessed.
-- `.stat-yellow` was renamed `.stat-cyan-alt` — it painted cyan, and `--color-yellow` is
-  retired.
+- `.stat-yellow` → `.stat-cyan-alt` → **gone entirely**. All four stat cards are one
+  treatment now; see "The page is composed as a sequence" below for why the per-card colour
+  had to go.
+
+### The page is composed as a SEQUENCE, and the timer closes it
+
+Redesigned 2026-08-31 against Apple HIG, as an *Apple shell around a brand core*: HIG
+structure (spacing scale, type ramp, materials, one action colour) wrapped around the
+brand-loud Bungee hero. **No copy was changed** — every string, the `domains` array,
+`EVENT`, the four stat figures and the trademark notice are byte-identical.
+
+**Section order is `Hero → About → Domains → Countdown → Footer`.** The countdown used to
+sit directly under the hero, which already states "26–27 Jan · Kochi, Kerala" — so the page
+said the same two facts twice in a row. That reads as a stutter, not as emphasis. The clock
+now closes the page, where it is a call to act.
+
+- **The nav `links` order is LOAD-BEARING, not cosmetic.** `recompute()` in
+  `MakerHeader.vue` loops the array and keeps *overwriting* `current`, so the **last** link
+  whose section has crossed the 40% line wins. Leave `countdown` first and the rail
+  highlights "Domains" while the reader is in the countdown. `links`, the page order and the
+  footer quick links must all agree.
+- **The countdown is ONE segmented control, not four cards.** It was four `flex-wrap` blocks
+  with `min-width: 5.25rem`, so at any width that could not seat all four they wrapped into a
+  ragged 2×2 with *unequal* cells. It is now one bordered container holding
+  `grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr))`.
+
+  **`auto-fit` + a rem minimum, NOT `repeat(4, 1fr)`.** A rigid four-column track cannot
+  reflow, so at 200% text the cells stay a quarter of the container while the labels inside
+  them double — "SECONDS" clips, and clipped is strictly worse than the ragged wrap this
+  replaced. Because the minimum is in `rem` it scales with the reader's text size, so the
+  track count follows the text: **4 across normally, a clean 2×2 at 150%, one column at
+  200%** — always equal cells, never an orphan.
+
+  **3.75rem is derived, not picked.** Narrowest supported viewport is 320px; `.container`
+  eats 2 × 1.5rem, leaving 272px; `auto-fit` then seats four columns with ~13px to spare.
+  **4.5rem drops 320px to a 3 + 1 orphan** — the exact failure this layout exists to prevent.
+  Re-check 320px, 150% and 200% if you touch it.
+
+  **The dividers are the 1px grid GAPS**, with the container painting `--separator-on-dark`
+  and each cell painting `--color-charcoal` over it. A `border-left` per cell cannot survive
+  reflow: the first cell of the second row draws a stray leading rule. Verified at 320/390px
+  and at 150%/200% text.
+
+  The date stays the largest fact — that ranking is deliberate and predates this work.
+- **Three negative margins are gone.** The countdown stack used `gap: 1.5rem` and then clawed
+  three gaps back with `-0.5rem` / `-0.75rem` / `-0.75rem`. That is a gap that was simply the
+  wrong size, paid for three times. It is `gap: 0` plus graduated per-child margins.
+- **The hero stack is graduated, not uniform.** `gap: 1.25rem` gave logo, headline, subtitle,
+  date band and two buttons *equal* separation — equal spacing is the absence of hierarchy.
+  The logo also dropped from `clamp(210px, 24vw, 320px)` to `clamp(150px, 17vw, 220px)`: a
+  320px mark directly above an H1 naming the same brand competes with the sentence it
+  introduces (HIG Branding: "branding always defers to content").
+- **Grounds now step: white (About) → `--bg-grouped` (Domains) → ink (Countdown) →
+  charcoal (Footer).** Two consequences that are easy to miss:
+  - Domain chips flipped from `--color-surface` to white. `#F3F3F3` on a `#F7F7F7` ground is
+    a 1% difference, i.e. invisible.
+  - The footer moved ink → charcoal, which **erased two elements that were themselves
+    charcoal**: the social chips and the newsletter input. Both are `--color-ink` now (ink is
+    the *lighter* of the two). Check for this whenever a dark ground changes.
+- **`--color-red` is size-dependent and that bit the footer.** `.footer-logo .colon` was
+  `--color-red`, which measures **3.76:1** on charcoal — passing *only* because that line
+  happens to be 24px, i.e. WCAG large text. It is `--color-red-on-dark` (5.40:1) now, which
+  passes on its own merits. CLAUDE.md already designated that token; the footer just wasn't
+  using it.
+- **The secondary button is no longer cyan.** A cyan fill beside the red primary made two
+  brand colours both mean "this is an action". Light grounds get a neutral
+  `.btn-maker-secondary`; the hero gets `.btn-maker-on-dark`.
+
+  **`.btn-maker-on-dark` is `rgba(0,0,0,0.55)` and the alpha is a measurement, not a mood.**
+  The obvious choice — a translucent *white* veil — cannot be verified at all, because it
+  LIGHTENS whatever the animated scene puts behind it. A **black** veil has a provable worst
+  case: the lightest thing the scene can present is white, `rgba(0,0,0,.55)` over `#FFFFFF`
+  composites to `#737373`, and white on `#737373` is **4.74:1**. That is a floor holding for
+  every frame. Do not raise the transparency to show more artwork: 0.45 gives 3.36:1 and
+  0.38 gives 2.68:1, both failing.
+- **Stat cards were flattened.** They previously differed *only* by a 3px coloured top border
+  while all four numerals were already ink — colour drawing a distinction that meant nothing,
+  and spending the accent palette to do it. They also had a hover lift, which is a false
+  affordance on something that is not interactive.
+- **`h1..h6` no longer carries `text-transform: uppercase`, but it DOES still carry
+  `font-family: var(--font-headline)`.** Removing the whole rule silently drops several
+  headings to Outfit, because they set no local font-family. Display headings opt in with
+  `.display-type`; body-level subheads use `.subhead` (Outfit 600, sentence case).
+- **The newsletter input had NO label at all** — placeholder only, which is a real WCAG
+  failure rather than a stylistic gap. It now has `id="newsletter-email"` bound to a
+  `.visually-hidden` label, plus `autocomplete="email"`. `.visually-hidden` is the clip
+  pattern extracted out of `.skip-link`, which now shares it.
+- **`--rail-h` is 58px, not 56px.** The rail's real footprint is a 44px pill + 2×6px padding
+  + 2×1px border. It is a `min-height`, so the rail was never clipped — but all three
+  clearances built on it (root `scroll-padding-bottom`, hero bottom padding, footer bottom
+  padding) were 2px short.
+- **`@lucide/vue` ships NO brand icons.** `Twitter`, `Instagram` and `Youtube` are simply not
+  exported (verified against the installed 1.33.0 declarations). The footer's `X` / `IG` /
+  `YT` text glyphs stay for that reason; they are sized to 44px targets instead.
+- **The nav rail deliberately stayed at the BOTTOM on every width.** Moving it to a top
+  capsule on desktop was planned and then dropped: HIG's "avoid controls at the bottom of a
+  window" targets *draggable desktop app windows*, not a fixed browser viewport, and the move
+  needed a breakpoint-aware keyboard state machine, `env(safe-area-inset-top)`, a
+  scroll-padding switch and a hero z-index fix to be safe. Not worth it; the rail works.
+- Deleted as unused (each grepped to zero hits first): `.card-maker`, `.badge-maker*`,
+  `.animate-spin-slow`, `.animate-float`, `--shadow-maker*`, `--color-gray-100/200`,
+  `--border-width-thin/thick`.
+
+**Verification for this kind of change** (there is still no test runner):
+`npm run build` is the ONLY thing that catches a CSS syntax error. Then serve and check
+DOM order, that every `a[href^="#"]` resolves (scope it to `a` — a bare selector also
+matches the hero scene's 12 inline SVG `<use href="#fig-…">`), that the built client chunks
+contain no `fig-st_` or `peep-at`, and re-measure every contrast pair whose *foreground or
+background* moved. **Kill stray `node .output/server/index.mjs` processes between runs** — a
+survivor holds the port, the new server dies with `EADDRINUSE`, and curl silently measures
+the OLD build. That cost a full false "the reorder did not apply" diagnosis here.
+
+### Real data, and what was fake before it
+
+Audited and replaced 2026-08-31, on the owner's answers. Every one of these had shipped as a
+plausible-looking invention.
+
+| Was | Now |
+|---|---|
+| `forms.gle/makerfairekochi2027` in **5 places** | **CTAs removed.** The link did not exist. |
+| `twitter.com/makerfaire`, `instagram.com/makerfaire`, `youtube.com/makerfaire` | Instagram `makerfairekochi` + a mail link. The old three were the **global Make Community** accounts. |
+| Newsletter form | **Removed.** |
+| No contact anywhere | `makerfairekochi@gmail.com` |
+| `siteUrl` falling back to `''` | `https://makerfaire.in` |
+| Venue implied by "Kochi, Kerala" | `EVENT.venueLabel` — "Venue to be announced", stated |
+| No ticket info | `EVENT.admissionLabel` — "Free entry", plus a schema.org `Offer` |
+| Footer logo **typeset in Bungee** | The real `mf-kochi-long` asset |
+
+- **The newsletter was a no-op, not merely unwired.** `handleSubscribe` set a flag, cleared the
+  field, showed "You're on the list", and reset after five seconds. There was no endpoint and no
+  storage — **every address typed into it was silently discarded.** Removing it was the honest
+  outcome. If it returns, it needs a provider AND the rail's keyboard avoidance back.
+- **A dead primary CTA is worse than no primary CTA.** All five proposal buttons were removed
+  rather than restyled or pointed at a guess. `NetHero.vue`, `MakerHeader.vue`, `MakerAbout.vue`,
+  `MakerCategories.vue` and `MakerFooter.vue` each carry a comment saying where to restore it.
+  `.pill-cta` went with the nav's Join pill.
+  `.btn-maker-primary` / `.btn-maker-secondary` are deliberately KEPT in `main.css` despite being
+  momentarily unreferenced — they are design-system primitives waiting on a real destination, not
+  dead code like `.card-maker` was.
+- **The hero's one remaining button stays the dark-ground NEUTRAL.** Promoting "Learn More" to the
+  red primary because it is now the only button would paint plain navigation as the page's
+  conversion action. It scrolls; it should not shout.
+- **`@lucide/vue` ships no brand icons** — `Instagram`, `Twitter`, `Youtube` are not exported
+  (verified against the installed 1.33.0 declarations). The Instagram glyph is therefore an
+  **inline SVG**; `Mail` beside it is a Lucide icon, so the two match in stroke weight. The old
+  `X` / `IG` / `YT` were literal text in boxes and looked exactly like the placeholders they were.
+- **`siteUrl` is the LAST link in the env chain, on purpose.** `URL` / `CF_PAGES_URL` /
+  `VERCEL_URL` still win, so Netlify, Cloudflare Pages and Vercel **preview** deploys keep
+  describing themselves correctly; only a build with none of them set — production, or
+  `nuxt generate` locally — falls through to `https://makerfaire.in`. That is what stopped
+  og:image baking as `http://localhost/img/logo/...`.
+- **`offers` is not decoration in the JSON-LD.** Google generally will not render an event rich
+  result without it, and free is expressed as `price: '0'` — omitting `offers` reads as
+  *unknown*, not *free*. `url`, `image` and `organizer` were added at the same time for the same
+  reason. `location.name` is `EVENT.venueLabel`; swap in the venue and add
+  `streetAddress`/`postalCode`/`geo` the moment it exists.
+- **Do not TYPESET the logo.** The footer rendered the mark as
+  `Make<span class="colon">:</span> Maker Faire <span class="location">Kochi</span>` — a
+  licensed trademark redrawn in the wrong typeface, with a hand-picked red colon and cyan city,
+  which drifted from the official mark every time anyone touched the CSS. It is the
+  `mf-kochi-long` asset now, in the same `<picture>` pattern as the hero (webp 1x/2x, PNG
+  fallback), `loading="lazy"` because it is below the fold.
+
+  The asset is **not transparent** — it carries its own white plaque and cyan frame (corner
+  pixel is `#00AEEF`, mean alpha 0.999). That is why it needs no colour handling on the dark
+  ground, and it is also why the whole `--color-red` vs `--color-red-on-dark` question the
+  typeset version raised disappears with it. Do not "remove the white box": the plaque is
+  part of the licensed lockup.
+
+- **A `border-bottom` is not an underline on a 44px target.** The contact email is
+  `display: inline-flex` with a `min-height: 44px` hit area; a border sits at the bottom of the
+  *box*, so it detached and floated well below the address. `text-decoration: underline` with
+  `text-underline-offset` hugs the glyphs however tall the target is.
 
 ### Still true regardless of the hero
 
-- **The nav rail hides via `visualViewport`, not focus events.** Submitting the newsletter removes
-  the focused button through `v-if`, and removing a focused element does not reliably fire
-  `focusout` — focus-based hiding strands the site's only navigation off-screen.
+- **The nav rail's keyboard avoidance was REMOVED, and must return with any form.** There is
+  no `<input>`, `<textarea>` or contenteditable anywhere on the site any more (the newsletter
+  is gone), so the code was unreachable. The lesson it encoded is still true and is preserved
+  as a comment in `MakerHeader.vue`: on a phone the on-screen keyboard pins a fixed bottom rail
+  directly over the field being typed in, so the rail must hide — and it must key off
+  `visualViewport`, **not** `focusin`/`focusout`. Focus tracking looks simpler and is broken:
+  removing a focused element (a `v-if` on submit, say) does not reliably fire `focusout`, so
+  the rail stays hidden forever, taking the site's only navigation with it. Guard it with an
+  `activeElement` check so a pinch zoom, which also shrinks the visual viewport, does not hide
+  the nav.
 - **`IntersectionObserver` `rootMargin` percentages resolve against WIDTH**, including top/bottom.
   `-40% 0px -60% 0px` is a negative-height root on a landscape viewport and never fires. Active
   section tracking uses a rAF-throttled scroll listener instead.
@@ -618,17 +850,30 @@ volume, with nothing in between. Ranking them is what makes them readable.
 
 ## Still open
 
-- Real-device iOS pass: keyboard open, safe area, 200% zoom, forced-colors.
+**Waiting on the owner (the site ships correct-but-incomplete until these land):**
+
+- **X and YouTube handles** — footer currently shows Instagram + email only.
+- **A real exhibitor/proposal destination.** Five CTAs were removed and are commented in place;
+  the page currently has NO conversion action.
+- **The venue.** Then update `EVENT.venueLabel` and the JSON-LD `Place` (street, pincode, geo).
+- **A 1200x630 share image.** `twitter:card` is `summary_large_image`, which expects ~1.91:1,
+  but `og:image` is the **512x512 square** logo — previews crop badly or downgrade.
+- **A sitemap.** `robots.txt` allows everything and declares no `Sitemap:`; none exists.
+
+**Engineering:**
+
+- Real-device iOS pass: safe area, 200% zoom, forced-colors. (Keyboard is moot — no inputs.)
 - LCP measurement on throttled 4G. The scene is inline SSR so it costs no extra request,
   but inline SVG is **not** an LCP candidate — the Bungee headline almost certainly is.
 - Portrait crops to the middle ~500 scene units, which shows the bench crowd and the
   flywheel but loses the cheena vala. Acceptable, not ideal; a portrait-specific crop
   would need a second composition.
-- **Save-Data visitors still download the whole scene.** `Save-Data` currently suppresses
-  the *animation*, not the ~208KB of inline SVG — so the visitor who asked to save data
-  saves none. The fix is a static-image hero for that request, which is why
-  `public/img/hero-scene-still.{avif,webp,jpg}` was **kept** when the other orphans went
-  (see below). Deleting those three forecloses it without re-rendering them.
+- **Save-Data visitors still download the whole scene.** `Save-Data` suppresses the
+  *animation*, not the ~143KB of inline SVG — so the visitor who asked to save data saves
+  none. The fix is a static-image hero for that request. The three stills it would have used
+  were **deleted on 2026-08-30** (261 KB, deployed and never requested), so building it now
+  means re-rendering them first: `scripts/preview.cjs` plus a headless screenshot, then
+  encode to avif/webp/jpg.
 - `remotion/src/PeepsTest.tsx` and its `<Composition>` in `Root.tsx` are the original
   feasibility probe and can go.
 - Dark mode ("Night catch") is designed in `docs/net-hero-experience.md` but not built.

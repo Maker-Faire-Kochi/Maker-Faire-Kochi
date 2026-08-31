@@ -30,8 +30,6 @@ const domains = [
   'Art & Illustration',
   'Science & Space',
 ]
-
-const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
 </script>
 
 <template>
@@ -43,7 +41,7 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
         <span class="domain-word-text">Domain</span>
       </p>
 
-      <h2 class="domain-claim">There is no domain for makers.</h2>
+      <h2 class="domain-claim display-type">There is no domain for makers.</h2>
 
       <!-- The section's thesis, not its footnote. It is deliberately ranked ABOVE
            the paragraph below it: two paragraphs at identical size and colour give
@@ -64,29 +62,27 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
         <li v-for="d in domains" :key="d" class="domain-chip">{{ d }}</li>
       </ul>
 
+      <!-- The "Pitch Your Project" button is gone with the rest of the proposal
+           CTAs (dead forms.gle link). The words stay, because they are the
+           section's closing statement, not button chrome. -->
       <div class="domain-banner">
         <div>
-          <h3 class="domain-banner-title">So bring the thing that doesn't fit.</h3>
+          <h3 class="domain-banner-title subhead">So bring the thing that doesn't fit.</h3>
           <p class="domain-banner-text">
             Tell us what you made, how you made it, and what broke on the way.
           </p>
         </div>
-        <a
-          :href="PROPOSAL_URL"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn-maker btn-maker-primary"
-        >
-          Pitch Your Project
-        </a>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
+/* Grouped ground, not white. About above it and this section were both white,
+   so two distinct arguments read as one unbroken sheet. Three consecutive
+   planes now: white (About) -> grouped (Domains) -> ink (Countdown). */
 .domain-section {
-  background-color: var(--color-white);
+  background-color: var(--bg-grouped);
 }
 
 .domain-inner {
@@ -109,11 +105,18 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
 
      #AEB7C0 was the fix for that and did not go far enough: 2.03:1, which is under
      even the 3:1 large-text floor, so the comment above and the value below said
-     opposite things. #8D959D is 3.04:1 — it clears that floor at this display size
-     (~96px) and is still far enough back that the strike, not the word, is what the
-     eye lands on. Measured, not eyeballed: a grey that LOOKS recessive enough is
-     exactly how the previous value got to 2.03. */
-  color: #8D959D;
+     opposite things. #8D959D followed and measured 3.04:1 ON WHITE.
+
+     It is #828A92 now, and the reason is a trap worth remembering: a contrast
+     figure belongs to a PAIR, not to a colour. Moving this section to the
+     grouped ground (#F7F7F7) silently dropped #8D959D to 2.83:1 — back under
+     the 3:1 large-text floor — without anyone touching the text colour. The
+     background moved, so the measurement moved with it.
+
+     #828A92 on #F7F7F7 is 3.27:1, i.e. better than the 3.04:1 this ever had on
+     white, and still recessive enough that the strike is what the eye lands on.
+     Re-measure this pair if the section ground changes again. */
+  color: #828A92;
   user-select: none;
 }
 
@@ -154,9 +157,9 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
 }
 
 .domain-claim {
-  font-size: clamp(1.75rem, 4vw, 3rem);
-  color: var(--color-ink);
-  margin-top: -0.25rem;
+  font-size: var(--text-title-1);
+  line-height: var(--text-title-1-lh);
+  color: var(--label);
   max-width: 20ch;
 }
 
@@ -165,7 +168,7 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
    --color-gray-800 is #3A3F45 on white, 10.62:1. The narrower measure is
    deliberate: a short line is what makes a statement read as a statement. */
 .domain-quote {
-  margin-top: 1.5rem;
+  margin-top: var(--sp-4);
   max-width: 46ch;
   font-size: clamp(1.15rem, 2vw, 1.45rem);
   line-height: 1.5;
@@ -173,9 +176,9 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
 }
 
 .domain-support {
-  margin-top: 1.25rem;
+  margin-top: var(--sp-3);
   max-width: 56ch;
-  color: var(--color-muted);
+  color: var(--label-secondary);
 }
 
 .domain-emphasis {
@@ -187,8 +190,8 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem;
-  margin-top: 2.5rem;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
   padding: 0;
   list-style: none;
 }
@@ -196,40 +199,45 @@ const PROPOSAL_URL = 'https://forms.gle/makerfairekochi2027'
 /* Deliberately NOT styled like the nav pills — no shadow, no hover lift, no
    pointer. These are labels, and anything button-like here would be a false
    affordance. */
+/* The fill flips to white BECAUSE the section ground changed: #F3F3F3 chips on
+   a #F7F7F7 ground are a 1% difference, i.e. invisible. On the grouped ground
+   the lighter fill is what makes a chip read as an object. Still deliberately
+   not styled like the nav pills -- no shadow, no hover lift, no pointer. */
 .domain-chip {
-  padding: 0.5rem 1rem;
+  padding: var(--sp-1) var(--sp-3);
   border-radius: var(--radius-pill);
-  border: 1px solid var(--color-hairline);
-  background-color: var(--color-surface);
+  border: 1px solid var(--separator);
+  background-color: var(--surface-1);
   font-family: var(--font-mono);
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--color-ink);
+  color: var(--label);
 }
 
 .domain-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  gap: var(--sp-5);
   flex-wrap: wrap;
   width: 100%;
-  margin-top: 4rem;
-  padding: 2rem;
+  margin-top: var(--sp-6);
+  padding: var(--sp-5);
   text-align: left;
-  border-radius: 14px;
-  border: 1px solid var(--color-hairline);
-  background-color: var(--color-surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--separator);
+  background-color: var(--surface-1);
 }
 
 .domain-banner-title {
-  font-size: 1.5rem;
-  color: var(--color-ink);
+  font-size: var(--text-title-2);
+  line-height: var(--text-title-2-lh);
+  color: var(--label);
 }
 
 .domain-banner-text {
-  margin-top: 0.5rem;
-  color: var(--color-muted);
+  margin-top: var(--sp-1);
+  color: var(--label-secondary);
 }
 
 @media (max-width: 768px) {

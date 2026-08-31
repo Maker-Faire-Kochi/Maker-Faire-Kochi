@@ -51,11 +51,16 @@ useHead({
          after tabbing the entire page is a real failure. -->
     <MakerHeader />
 
+    <!-- Order is the argument: hook, explain, include, commit.
+         The hero already states "26-27 Jan / Kochi", so a countdown immediately
+         under it restated the same two facts and read as a stutter rather than
+         emphasis. The clock now closes the page, where it is a call to act
+         instead of a repetition. -->
     <main id="main" tabindex="-1">
       <NetHero />
-      <MakerCountdown />
       <MakerAbout />
       <MakerCategories />
+      <MakerCountdown />
     </main>
 
     <!-- Outside <main> so it is a real contentinfo landmark. -->

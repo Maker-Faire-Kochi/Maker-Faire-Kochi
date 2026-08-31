@@ -53,7 +53,10 @@ const saveData = useState('hero-save-data', () =>
 )
 
 /**
- * Animation is opted IN, never opted out.
+ * Animation is opted IN, never opted out. Motion has two orthogonal axes:
+ * `is-ready` answers WHETHER MOTION IS ALLOWED AT ALL (mounted, and not
+ * Save-Data), while `is-offscreen` answers WHETHER IT IS CURRENTLY RUNNING.
+ * `is-ready` remains the single authority for whether motion is allowed.
  *
  * The scene is server-rendered, so its CSS would otherwise start animating
  * during initial paint -- including for visitors with no JavaScript. `is-ready`
@@ -62,7 +65,7 @@ const saveData = useState('hero-save-data', () =>
  * Honest note on WCAG 2.2.2 (Pause, Stop, Hide): there is still NO in-page
  * mechanism to stop this motion -- the pause control was removed at the owner's
  * request, and the off-screen suspension below is not a substitute, because the
- * visitor does not control it and scrolling back into view re-starts the motion
+ * visitor does not control it and scrolling back into view resumes the motion
  * automatically. `prefers-reduced-motion` remains the only real accommodation.
  * That gap is known and accepted; do not let this comment claim otherwise.
  */
@@ -71,12 +74,12 @@ const dataAllowsMotion = ref(false)
 const inViewport = ref(true)
 
 /**
- * DERIVED, never assigned from one input. An earlier draft set this straight
- * from the IntersectionObserver entry, which silently re-enabled the animation
- * for Save-Data visitors the moment the hero scrolled into view -- the observer
- * would have overwritten the opt-out. Every condition has to survive.
+ * An IntersectionObserver must never be the sole input to whether motion runs:
+ * an earlier draft let it silently re-enable animation for Save-Data visitors
+ * when the hero entered the viewport. That is now structurally guaranteed:
+ * the observer drives only `is-offscreen` and cannot grant motion.
  */
-const ready = computed(() => dataAllowsMotion.value && inViewport.value)
+const ready = computed(() => dataAllowsMotion.value)
 
 let observer: IntersectionObserver | null = null
 
@@ -94,10 +97,12 @@ onMounted(() => {
    * i.e. below the noise floor -- this is battery insurance on real hardware,
    * not a fix for a measured regression.
    *
-   * It toggles the EXISTING `is-ready` class rather than adding a second one, so
-   * the exhaustive selector list in assets/css/hero-scene.css stays the single
-   * authority on what animates. `animation-play-state` is not inherited, so a
-   * parallel mechanism would mean maintaining that list twice.
+   * This is separate from `is-ready`: toggling `is-ready` off screen removed the
+   * animations via `animation: none`, and re-adding a CSS animation restarts it
+   * at t=0. Scrolling back therefore replayed the camera push-in and snapped
+   * every gear back to its start. Measured before the fix: the camera clock read
+   * 633ms on screen, the animation was absent off screen, and on return it read
+   * 467ms instead of resuming near 1600ms. Pausing preserves phase.
    */
   if (typeof IntersectionObserver === 'undefined') return
   observer = new IntersectionObserver(
@@ -124,7 +129,7 @@ onUnmounted(() => {
          component and cannot receive reactive props, so pause and hydration
          cross the boundary as classes and are picked up by descendant
          selectors in assets/css/hero-scene.css. -->
-    <div class="net-hero-media hero-stage" :class="{ 'is-ready': ready }">
+    <div class="net-hero-media hero-stage" :class="{ 'is-ready': ready, 'is-offscreen': !inViewport }">
       <HeroScene />
 
       <!-- A vignette, not a flat veil. With white type over pale paper, a
@@ -147,7 +152,7 @@ onUnmounted(() => {
         />
       </picture>
 
-      <h1 class="net-hero-title">
+      <h1 class="net-hero-title display-type">
         Every kind of maker.<br />
         <span class="text-outline">Every kind of making.</span>
       </h1>
@@ -175,31 +180,17 @@ onUnmounted(() => {
         </span>
       </p>
 
+      <!-- The "Join as Maker" CTA was REMOVED, not restyled. It pointed at a
+           forms.gle link that does not exist, and a dead primary action is
+           worse than no primary action. Restore it here (and in MakerHeader,
+           MakerAbout, MakerCategories, MakerFooter) once there is a real
+           destination.
+
+           "Learn More" keeps the dark-ground neutral rather than being promoted
+           to the red primary: it scrolls the page, and painting navigation as
+           the page's one conversion action would oversell it. -->
       <div class="net-hero-actions">
-        <a
-          href="https://forms.gle/makerfairekochi2027"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn-maker btn-maker-primary"
-        >
-          Join as Maker
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="3"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </a>
-        <a href="#about" class="btn-maker btn-maker-secondary">Learn More</a>
+        <a href="#about" class="btn-maker btn-maker-on-dark">Learn More</a>
       </div>
     </div>
   </section>
@@ -253,6 +244,15 @@ onUnmounted(() => {
     rgba(0, 0, 0, var(--hero-dim));
 }
 
+/* ── Rhythm, not a uniform stack ──────────────────────────────────────────
+   This was `gap: 1.25rem`, which gave six elements — logo, headline, subtitle,
+   date band, and two buttons — exactly equal separation. Equal spacing is the
+   absence of hierarchy: nothing in the stack said which parts belong together.
+
+   The spacing is graduated instead, so the stack reads as three groups:
+   the brand lockup (logo tight to the headline it introduces), the pitch
+   (headline + subtitle), and then a real break before the facts and the
+   actions, which are what the visitor is here to act on. */
 .net-hero-content {
   position: relative;
   z-index: 4;
@@ -260,17 +260,22 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.25rem;
+  gap: 0;
 }
 
+/* Was clamp(210px, 24vw, 320px) — a 320px logo directly above an H1 naming the
+   same brand, which made the mark compete with the sentence it was introducing.
+   It stays (a hero is the one place a logo belongs) but yields the lead. */
 .net-hero-logo {
-  width: clamp(210px, 24vw, 320px);
+  width: clamp(150px, 17vw, 220px);
   height: auto;
   display: block;
 }
 
 .net-hero-title {
-  font-size: clamp(2rem, 5.8vw, 4.75rem);
+  margin-top: var(--sp-3);
+  font-size: var(--text-display);
+  line-height: var(--text-display-lh);
   /* 22ch, not 18ch: each line is 20-21 characters and must not wrap. */
   max-width: 22ch;
   color: var(--hero-ink);
@@ -283,6 +288,7 @@ onUnmounted(() => {
 }
 
 .net-hero-subtitle {
+  margin-top: var(--sp-4);
   max-width: 46ch;
   font-size: clamp(1rem, 1.4vw, 1.2rem);
   color: var(--hero-ink);
@@ -299,7 +305,9 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0.85rem;
   flex-wrap: wrap;
-  margin-top: 0.25rem;
+  /* The break. Everything above is the pitch; everything from here down is
+     what the visitor acts on. */
+  margin-top: var(--sp-5);
   padding: 0.6rem 1.15rem;
   border-radius: var(--radius-pill);
   background-color: rgba(0, 0, 0, 0.38);
@@ -332,10 +340,10 @@ onUnmounted(() => {
 
 .net-hero-actions {
   display: flex;
-  gap: 1rem;
+  gap: var(--sp-3);
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 0.5rem;
+  margin-top: var(--sp-4);
 }
 
 /* Short viewports — a laptop at 200% zoom (1440x900 becomes 720x450), or a phone
@@ -348,16 +356,28 @@ onUnmounted(() => {
     padding-top: 1.5rem;
   }
 
-  .net-hero-content {
-    gap: 0.75rem;
+  /* Compress the graduated spacing rather than the content. The stack has to
+     fit inside 100svh at 720x450 (a laptop at 200% zoom) without the buttons
+     sliding under the fixed rail. */
+  .net-hero-title {
+    margin-top: var(--sp-1);
+  }
+
+  .net-hero-subtitle {
+    margin-top: var(--sp-2);
   }
 
   .net-hero-when {
+    margin-top: var(--sp-3);
     padding: 0.45rem 1rem;
   }
 
+  .net-hero-actions {
+    margin-top: var(--sp-2);
+  }
+
   .net-hero-logo {
-    width: clamp(170px, 18vw, 240px);
+    width: clamp(130px, 14vw, 170px);
   }
 }
 

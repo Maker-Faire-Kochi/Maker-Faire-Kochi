@@ -31,7 +31,26 @@ export const EVENT = {
   placeLocality: 'Kochi',
   placeRegion: 'Kerala',
   placeCountry: 'IN',
+  /**
+   * The venue is genuinely undecided, and saying so is better than implying
+   * "Kochi, Kerala" IS the venue. It is stated on the page rather than left to
+   * inference, because "where exactly" is the second question anyone asks after
+   * "when".
+   */
+  venueLabel: 'Venue to be announced',
+  /** Admission is free. Also emitted as a schema.org Offer -- see MakerCountdown. */
+  admissionLabel: 'Free entry',
 } as const
+
+/**
+ * The one contact address. Kept beside EVENT so a component never hardcodes it,
+ * for the same reason the dates live here: it was going to end up typed into
+ * two places and corrected in one.
+ */
+export const CONTACT_EMAIL = 'makerfairekochi@gmail.com'
+
+/** The faire's own account, not the global Make Community one. */
+export const INSTAGRAM_URL = 'https://instagram.com/makerfairekochi'
 
 /** upcoming → live → ended. Replaces a lone `started` boolean, which had no end. */
 export type EventPhase = 'upcoming' | 'live' | 'ended'
