@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
-import { isOwnerUser } from '../composables/useAdminSession'
+import { getAdminSession, isOwnerUser } from '../composables/useAdminSession'
 import {
   responsesToCsv,
   useInterestAnalytics,
@@ -58,13 +58,13 @@ async function load() {
   error.value = ''
   try {
     const supabase = useAdminSupabase()
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (!sessionData.session) {
+    const { session, owner } = await getAdminSession()
+    if (!session) {
       await navigateTo({ path: '/admin/login', query: { next: '/admin' } })
       return
     }
-    email.value = sessionData.session.user.email || ''
-    roleOk.value = isOwnerUser(sessionData.session.user)
+    email.value = session.user.email || ''
+    roleOk.value = owner
     if (!roleOk.value) {
       await supabase.auth.signOut()
       await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })

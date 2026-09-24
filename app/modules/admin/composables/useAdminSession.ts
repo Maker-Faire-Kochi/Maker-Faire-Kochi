@@ -13,7 +13,17 @@ export async function getAdminSession(): Promise<{ session: Session | null; owne
   const supabase = useAdminSupabase()
   const { data, error } = await supabase.auth.getSession()
   if (error) return { session: null, owner: false }
-  return { session: data.session, owner: isOwnerUser(data.session?.user) }
+  const session = data.session
+  if (!session || !isOwnerUser(session.user)) return { session, owner: false }
+
+  try {
+    const result = await $fetch<{ owner: boolean }>('/api/admin/session', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    return { session, owner: result.owner === true }
+  } catch {
+    return { session, owner: false }
+  }
 }
 
 export async function lockAdminSession(): Promise<void> {

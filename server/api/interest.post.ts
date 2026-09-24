@@ -6,12 +6,7 @@ const MAX = 8
 const MAX_BODY_BYTES = 64 * 1024
 
 export default defineEventHandler(async (event) => {
-  const length = Number(getRequestHeader(event, 'content-length') || 0)
-  if (length > MAX_BODY_BYTES) {
-    throw createError({ statusCode: 413, statusMessage: 'Submission too large' })
-  }
-
-  const body = await readBody<Partial<InterestFormInput>>(event)
+  const body = await readJsonBodyLimited<Partial<InterestFormInput>>(event, MAX_BODY_BYTES)
 
   // Honeypot: answer like a success so a bot has nothing to adapt to.
   if (typeof body?.website === 'string' && body.website.trim()) {

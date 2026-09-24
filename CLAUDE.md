@@ -852,13 +852,17 @@ plausible-looking invention.
 - **`/admin` is ONE account, on purpose.** There was an organizer sign-up + owner-approval flow;
   it was deleted on the owner's instruction. `POST /api/admin/send-code` emails a code ONLY to
   `NUXT_ADMIN_OWNER_EMAIL`, first creating that Auth user and setting `app_metadata.role =
-  owner`. Every other address gets the same `{ ok: true }` and no email, so the endpoint cannot
-  be used to discover the owner. Supabase sign-ups stay OFF; the admin API ignores that setting.
+  owner`. It also binds that user's UUID in `admin_owner`; RLS checks the UUID, not the role.
+  Every address gets the same delayed `{ ok: true }`, including on provider failure, so response
+  status and ordinary timing do not reveal the owner. Supabase sign-ups stay OFF.
 - **Never put the owner email in `runtimeConfig.public`.** Public config is serialized into the
   HTML of every page, homepage included. It was there once; verify with
   `curl -s localhost:3000/ | grep -c <owner email>` → 0.
-- **RLS is the lock; the middleware is a UI gate.** Policies read `app_metadata.role = 'owner'`
-  from the JWT. `app_metadata` cannot be written by a client, only by the service role.
+- **One owner means one UUID, not everyone with a role string.** `GET /api/admin/session`
+  validates both role and email against server-only config. RLS calls
+  `private.is_admin_owner()`, which compares `auth.uid()` to the singleton `admin_owner` row.
+  On owner rotation the binding moves first, immediately invalidating the old live JWT, then
+  the old account's role is cleared.
 - **Updates may change `status` and nothing else** — enforced by a trigger comparing
   `to_jsonb(new) - 'status'` with `old`, so new columns are covered automatically.
 - **Text caps live in TWO places that must agree:** `MAX_LEN` in `shared/interest/validate.ts`
@@ -874,6 +878,9 @@ plausible-looking invention.
 - **Rate limits do not read `x-forwarded-for`** — its first entry is client-supplied. They use the
   host-set `x-nf-client-connection-ip` / `cf-connecting-ip` / `x-real-ip`. They are in-memory
   per instance, so serverless cold starts reset them; good enough for a v1 interest form.
+- **Request limits are STREAMING limits.** `Content-Length` can be omitted on a chunked request,
+  so checking that header alone is not a body cap. `readJsonBodyLimited` counts incoming bytes
+  and cancels the reader at the ceiling (64 KB for the form, 1 KB for admin email).
 
 ## Still open
 

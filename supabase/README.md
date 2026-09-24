@@ -9,9 +9,9 @@
   2. `POST /api/admin/send-code` checks it against the env var. Any other address gets the
      same "code is on its way" reply and no email, so the endpoint does not reveal the owner.
   3. For the owner it creates the Auth user if missing, sets `app_metadata.role = owner`,
-     then emails a 6-digit code.
+     binds that Auth user ID as the sole database owner, then emails a 6-digit code.
   4. The code is verified in the browser; the session's JWT carries `role: owner`, which is
-     what RLS checks.
+     checked by the server. RLS separately checks the bound Auth user ID.
 - Nobody can sign up. There is no approval queue and no team.
 
 ## Setup
@@ -41,9 +41,9 @@ NUXT_ADMIN_OWNER_EMAIL=you@example.com
 
 ## Changing the owner
 
-Change `NUXT_ADMIN_OWNER_EMAIL` and redeploy. The old account keeps `role: owner` in
-Auth until you remove it: **Authentication → Users → old user → delete** (or clear its
-App metadata).
+Change `NUXT_ADMIN_OWNER_EMAIL`, redeploy, then sign in once as the new owner. That login
+atomically moves the database owner binding, so the previous user's existing token loses
+data access immediately, and removes the old account's owner role.
 
 ## Migrations
 
@@ -53,3 +53,4 @@ App metadata).
 | `…140000_organizer_access_requests.sql` | Old approval queue (dropped by 160000) |
 | `…150000_fix_interest_rls_and_status.sql` | Status-only trigger (superseded by 160000) |
 | `…160000_single_owner.sql` | Owner-only RLS, trigger `search_path`, length caps, drops the queue |
+| `…170000_bind_single_admin_owner.sql` | Binds RLS to one Auth user ID, not a reusable role |

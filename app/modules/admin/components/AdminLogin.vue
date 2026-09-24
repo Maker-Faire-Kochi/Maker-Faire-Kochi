@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Lock } from '@lucide/vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
-import { isOwnerUser, lockAdminSession } from '../composables/useAdminSession'
+import { getAdminSession, lockAdminSession } from '../composables/useAdminSession'
 
 type Step = 'email' | 'otp'
 
@@ -34,8 +34,8 @@ function nextPath(): string {
 
 onMounted(async () => {
   try {
-    const { data } = await useAdminSupabase().auth.getSession()
-    if (isOwnerUser(data.session?.user)) await navigateTo(nextPath())
+    const { owner } = await getAdminSession()
+    if (owner) await navigateTo(nextPath())
   } catch {
     /* config missing */
   }
@@ -64,13 +64,14 @@ async function verifyOtp() {
   message.value = ''
   try {
     const supabase = useAdminSupabase()
-    const { data, error } = await supabase.auth.verifyOtp({
+    const { error } = await supabase.auth.verifyOtp({
       email: email.value.trim().toLowerCase(),
       token: otp.value.trim(),
       type: 'email',
     })
     if (error) throw error
-    if (!isOwnerUser(data.session?.user)) {
+    const verified = await getAdminSession()
+    if (!verified.owner) {
       await lockAdminSession()
       throw new Error('That account does not have access to this dashboard.')
     }

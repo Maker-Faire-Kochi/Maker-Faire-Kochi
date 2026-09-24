@@ -177,7 +177,7 @@ export function validateInterestInput(raw: Partial<InterestFormInput>): Validate
       phone,
       location,
       self_describe: selfDescribe,
-      self_describe_other: selfDescribeOther,
+      self_describe_other: selfDescribe === 'other' ? selfDescribeOther : null,
       participation,
       make_possible: makePossible,
       contribute_text: needs.contribute ? contributeText : null,

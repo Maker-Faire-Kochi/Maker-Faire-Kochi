@@ -74,6 +74,18 @@ assert(
 {
   const r = validateInterestInput({
     ...base,
+    selfDescribe: 'student',
+    selfDescribeOther: 'stale text from the hidden Other field',
+  })
+  assert(
+    r.ok === true && r.data.self_describe_other === null,
+    'hidden self-description answer is dropped',
+  )
+}
+
+{
+  const r = validateInterestInput({
+    ...base,
     contributeText: 'stale text from a hidden section',
     hasProject: 'yes' as never,
     projectDescription: 'stale',
