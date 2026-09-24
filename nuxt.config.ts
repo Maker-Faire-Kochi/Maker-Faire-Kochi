@@ -8,6 +8,15 @@ export default defineNuxtConfig({
   // sent once in the SSR HTML and never again in the client bundle.
   experimental: { componentIslands: true },
 
+  /**
+   * Admin is organizer-only. SPA mode so the lock middleware always runs in
+   * the browser before any dashboard HTML is painted (no SSR leak of shell).
+   */
+  routeRules: {
+    '/admin': { ssr: false },
+    '/admin/**': { ssr: false },
+  },
+
   runtimeConfig: {
     supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || '',
     public: {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
 import {
   responsesToCsv,
@@ -59,16 +59,15 @@ async function load() {
     const supabase = useAdminSupabase()
     const { data: sessionData } = await supabase.auth.getSession()
     if (!sessionData.session) {
-      await navigateTo('/admin/login')
+      await navigateTo({ path: '/admin/login', query: { next: '/admin' } })
       return
     }
     email.value = sessionData.session.user.email || ''
     const role = sessionData.session.user.app_metadata?.role
     roleOk.value = role === 'organizer'
     if (!roleOk.value) {
-      error.value =
-        'Signed in, but this account is not an organizer. Set app_metadata.role = "organizer" in Supabase.'
-      loading.value = false
+      await supabase.auth.signOut()
+      await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
       return
     }
     const { data, error: qErr } = await supabase
@@ -101,7 +100,7 @@ async function setStatus(id: string, status: string) {
 async function signOut() {
   const supabase = useAdminSupabase()
   await supabase.auth.signOut()
-  await navigateTo('/admin/login')
+  await navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
 }
 
 async function copyFormLink() {
@@ -133,7 +132,24 @@ function partLabel(values: string[]) {
     .join(', ')
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  const supabase = useAdminSupabase()
+  const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || !session) {
+      navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
+      return
+    }
+    if (session.user.app_metadata?.role !== 'organizer') {
+      void supabase.auth.signOut().then(() =>
+        navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } }),
+      )
+    }
+  })
+  onUnmounted(() => {
+    sub.subscription.unsubscribe()
+  })
+})
 </script>
 
 <template>

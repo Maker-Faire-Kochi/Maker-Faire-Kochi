@@ -31,9 +31,18 @@ Then manually:
 3. Set organizer: Authentication → user → App Metadata → `{ "role": "organizer" }`.
 4. Magic link via `/admin/login` → inbox loads.
 
-## Auth redirect
+## Auth lock
 
-In Supabase Auth → URL config, allow:
+`/admin` is **SPA-only** and guarded by `admin-auth` middleware:
 
-- `http://localhost:3000/admin`
-- `https://makerfaire.in/admin`
+1. No Supabase session → `/admin/login`
+2. Session without `app_metadata.role = "organizer"` → signed out + locked login
+3. Organizer session → dashboard unlocks
+
+Set the role in Supabase Dashboard → Authentication → user → **App metadata** (not User metadata):
+
+```json
+{ "role": "organizer" }
+```
+
+Allow redirect URLs: `http://localhost:3000/admin` and `https://makerfaire.in/admin`.
