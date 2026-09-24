@@ -62,9 +62,6 @@ const domains = [
         <li v-for="d in domains" :key="d" class="domain-chip">{{ d }}</li>
       </ul>
 
-      <!-- The "Pitch Your Project" button is gone with the rest of the proposal
-           CTAs (dead forms.gle link). The words stay, because they are the
-           section's closing statement, not button chrome. -->
       <div class="domain-banner">
         <div>
           <h3 class="domain-banner-title subhead">So bring the thing that doesn't fit.</h3>
@@ -72,6 +69,7 @@ const domains = [
             Tell us what you made, how you made it, and what broke on the way.
           </p>
         </div>
+        <a href="/interestform" class="btn-maker btn-maker-primary domain-banner-cta">Get Involved</a>
       </div>
     </div>
   </section>

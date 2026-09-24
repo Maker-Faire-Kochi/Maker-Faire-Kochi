@@ -112,8 +112,7 @@ onUnmounted(() => {
         <span v-if="activeId === l.id" class="pill-dot" aria-hidden="true"></span>
       </a>
 
-      <!-- The "Join" CTA pill was removed with the rest of the proposal CTAs
-           (dead forms.gle link). Restore it here alongside the others. -->
+      <a href="/interestform" class="pill pill-cta">Get Involved</a>
     </nav>
   </div>
 </template>
@@ -199,6 +198,19 @@ onUnmounted(() => {
    colour blindness. */
 .pill.is-active {
   background-color: var(--color-surface);
+}
+
+.pill-cta {
+  background-color: var(--color-red-cta);
+  color: var(--color-white);
+}
+.pill-cta:hover {
+  background-color: var(--color-red-cta);
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+.pill-cta .pill-label {
+  color: inherit;
 }
 
 .pill-dot {
