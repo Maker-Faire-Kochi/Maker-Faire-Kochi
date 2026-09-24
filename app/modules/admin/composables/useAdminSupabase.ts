@@ -17,8 +17,8 @@ export function useAdminSupabase(): SupabaseClient {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce',
+      // Sign-in is a typed 6-digit code only; there is no link to pick up.
+      detectSessionInUrl: false,
     },
   })
   return browserClient

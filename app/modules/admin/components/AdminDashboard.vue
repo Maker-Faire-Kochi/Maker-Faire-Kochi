@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
-import { isOwnerUser, isStaffUser } from '../composables/useAdminSession'
+import { isOwnerUser } from '../composables/useAdminSession'
 import {
   responsesToCsv,
   useInterestAnalytics,
@@ -10,9 +10,8 @@ import type { InterestResponseRow } from '~~/shared/interest/types'
 import { PARTICIPATION, STATUSES } from '~~/shared/interest/constants'
 import AdminBarChart from './AdminBarChart.vue'
 import AdminTrendChart from './AdminTrendChart.vue'
-import AdminTeamPanel from './AdminTeamPanel.vue'
 
-const tab = ref<'summary' | 'responses' | 'team'>('summary')
+const tab = ref<'summary' | 'responses'>('summary')
 const rows = ref<InterestResponseRow[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -21,7 +20,6 @@ const filterPart = ref('')
 const search = ref('')
 const openId = ref<string | null>(null)
 const roleOk = ref(false)
-const isOwner = ref(false)
 const email = ref('')
 const copied = ref(false)
 
@@ -66,23 +64,36 @@ async function load() {
       return
     }
     email.value = sessionData.session.user.email || ''
-    roleOk.value = isStaffUser(sessionData.session.user)
-    isOwner.value = isOwnerUser(sessionData.session.user)
+    roleOk.value = isOwnerUser(sessionData.session.user)
     if (!roleOk.value) {
       await supabase.auth.signOut()
       await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
       return
     }
-    const { data, error: qErr } = await supabase
-      .from('interest_responses')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (qErr) throw qErr
-    rows.value = (data || []) as InterestResponseRow[]
+    rows.value = await fetchAllResponses(supabase)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to load'
   } finally {
     loading.value = false
+  }
+}
+
+/** PostgREST caps one response at 1000 rows; page until a short page. */
+async function fetchAllResponses(
+  supabase: ReturnType<typeof useAdminSupabase>,
+): Promise<InterestResponseRow[]> {
+  const PAGE = 1000
+  const all: InterestResponseRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error: qErr } = await supabase
+      .from('interest_responses')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (qErr) throw qErr
+    all.push(...((data || []) as InterestResponseRow[]))
+    if (!data || data.length < PAGE) return all
   }
 }
 
@@ -143,7 +154,7 @@ onMounted(() => {
       navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
       return
     }
-    if (!isStaffUser(session.user)) {
+    if (!isOwnerUser(session.user)) {
       void supabase.auth.signOut().then(() =>
         navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } }),
       )
@@ -159,7 +170,7 @@ onMounted(() => {
   <div class="panel">
     <header class="hero">
       <div>
-        <p class="eyebrow">Maker Faire Kochi · Organizer</p>
+        <p class="eyebrow">Maker Faire Kochi · Admin</p>
         <h1>Interest form</h1>
         <p class="hero-sub">
           Dashboard &amp; analytics — like Google Forms summaries, for Get Involved.
@@ -202,17 +213,6 @@ onMounted(() => {
         >
           Responses
           <span class="badge">{{ summary.total }}</span>
-        </button>
-        <button
-          v-if="isOwner"
-          type="button"
-          role="tab"
-          class="tab"
-          :class="{ active: tab === 'team' }"
-          :aria-selected="tab === 'team'"
-          @click="tab = 'team'"
-        >
-          Team
         </button>
       </div>
 
@@ -391,10 +391,6 @@ onMounted(() => {
           <p v-if="!filtered.length" class="empty">No responses match these filters.</p>
         </div>
       </div>
-
-      <div v-if="isOwner" v-show="tab === 'team'" class="team-wrap">
-        <AdminTeamPanel />
-      </div>
     </template>
   </div>
 </template>
@@ -416,7 +412,7 @@ onMounted(() => {
   margin: 0 0 0.25rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-cyan);
+  color: var(--color-red-cta);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

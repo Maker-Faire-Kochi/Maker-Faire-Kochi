@@ -1,32 +1,29 @@
 import { validateInterestInput } from '../../shared/interest/validate'
 import type { InterestFormInput } from '../../shared/interest/types'
 
-/** Simple in-memory rate limit (per server instance). Enough for v1. */
-const hits = new Map<string, { count: number; reset: number }>()
 const WINDOW_MS = 15 * 60 * 1000
 const MAX = 8
-
-function rateLimited(key: string): boolean {
-  const now = Date.now()
-  const row = hits.get(key)
-  if (!row || now > row.reset) {
-    hits.set(key, { count: 1, reset: now + WINDOW_MS })
-    return false
-  }
-  row.count += 1
-  return row.count > MAX
-}
+const MAX_BODY_BYTES = 64 * 1024
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<Partial<InterestFormInput>>(event)
-  const ip =
-    getRequestHeader(event, 'cf-connecting-ip') ||
-    getRequestHeader(event, 'x-forwarded-for')?.split(',')[0]?.trim() ||
-    getRequestIP(event) ||
-    'unknown'
+  const length = Number(getRequestHeader(event, 'content-length') || 0)
+  if (length > MAX_BODY_BYTES) {
+    throw createError({ statusCode: 413, statusMessage: 'Submission too large' })
+  }
 
+  const body = await readBody<Partial<InterestFormInput>>(event)
+
+  // Honeypot: answer like a success so a bot has nothing to adapt to.
+  if (typeof body?.website === 'string' && body.website.trim()) {
+    return { ok: true }
+  }
+
+  const ip = clientIp(event)
   const emailKey = typeof body?.email === 'string' ? body.email.toLowerCase().trim() : ''
-  if (rateLimited(`ip:${ip}`) || (emailKey && rateLimited(`email:${emailKey}`))) {
+  if (
+    rateLimited(`interest:ip:${ip}`, MAX, WINDOW_MS) ||
+    (emailKey && rateLimited(`interest:email:${emailKey}`, MAX, WINDOW_MS))
+  ) {
     throw createError({ statusCode: 429, statusMessage: 'Too many submissions. Try again later.' })
   }
 

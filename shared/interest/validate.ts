@@ -25,21 +25,27 @@ const heardSet = new Set(HEARD_FROM.map((o) => o.value))
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+/** Character caps. The DB carries matching CHECK constraints. */
+export const MAX_LEN = {
+  name: 120,
+  email: 254,
+  phone: 32,
+  short: 200,
+  long: 4000,
+} as const
+
 export interface InterestNeeds {
   contribute: boolean
   projectBlock: boolean
-  projectDetails: boolean
   volunteer: boolean
   org: boolean
 }
 
 export function interestNeeds(participation: string[]): InterestNeeds {
   const set = new Set(participation)
-  const projectBlock = [...EXHIBIT_LIKE].some((v) => set.has(v))
   return {
     contribute: [...CONTRIBUTE_LIKE].some((v) => set.has(v)),
-    projectBlock,
-    projectDetails: false, // filled by caller with hasProject
+    projectBlock: [...EXHIBIT_LIKE].some((v) => set.has(v)),
     volunteer: set.has('volunteer'),
     org: set.has('org_booth'),
   }
@@ -55,7 +61,7 @@ function trim(s: unknown): string {
 
 function asStringArray(v: unknown): string[] {
   if (!Array.isArray(v)) return []
-  return v.filter((x): x is string => typeof x === 'string')
+  return [...new Set(v.filter((x): x is string => typeof x === 'string'))]
 }
 
 /** Shared client + server validation. Returns DB-shaped row fields on success. */
@@ -90,6 +96,22 @@ export function validateInterestInput(raw: Partial<InterestFormInput>): Validate
   }
   const orgName = trim(raw.orgName) || null
   const orgCollaborate = trim(raw.orgCollaborate) || null
+
+  const caps: [string | null, number, string][] = [
+    [name, MAX_LEN.name, 'Name'],
+    [email, MAX_LEN.email, 'Email'],
+    [phone, MAX_LEN.phone, 'Phone'],
+    [selfDescribeOther, MAX_LEN.short, '“What describes you”'],
+    [orgName, MAX_LEN.short, 'Organization name'],
+    [heardFromOther, MAX_LEN.short, '“How did you hear”'],
+    [makePossible, MAX_LEN.long, '“What would you like to make possible”'],
+    [contributeText, MAX_LEN.long, '“What would you like to contribute”'],
+    [projectDescription, MAX_LEN.long, 'Project description'],
+    [anythingElse, MAX_LEN.long, '“Anything else”'],
+  ]
+  for (const [value, max, label] of caps) {
+    if (value && value.length > max) errors.push(`${label} is too long (max ${max} characters)`)
+  }
 
   if (!name) errors.push('Name is required')
   if (!email || !emailRe.test(email)) errors.push('A valid email is required')
@@ -129,9 +151,6 @@ export function validateInterestInput(raw: Partial<InterestFormInput>): Validate
   }
 
   const needsOrgFields = needs.org || inOrganization === true
-  if (inOrganization === null && needs.org) {
-    // org_booth selected — ask org block
-  }
   if (needsOrgFields) {
     if (!orgName) errors.push('Organization / community name is required')
     if (!orgCollaborate || !orgCollabSet.has(orgCollaborate as never)) {
@@ -148,6 +167,8 @@ export function validateInterestInput(raw: Partial<InterestFormInput>): Validate
 
   if (errors.length) return { ok: false, errors }
 
+  const hasProjectDetails = needs.projectBlock && hasProject === 'yes'
+
   return {
     ok: true,
     data: {
@@ -159,10 +180,10 @@ export function validateInterestInput(raw: Partial<InterestFormInput>): Validate
       self_describe_other: selfDescribeOther,
       participation,
       make_possible: makePossible,
-      contribute_text: contributeText,
-      has_project: hasProject,
-      project_description: hasProject === 'yes' ? projectDescription : null,
-      project_categories: hasProject === 'yes' ? projectCategories : null,
+      contribute_text: needs.contribute ? contributeText : null,
+      has_project: needs.projectBlock ? hasProject : null,
+      project_description: hasProjectDetails ? projectDescription : null,
+      project_categories: hasProjectDetails ? projectCategories : null,
       volunteer_areas: needs.volunteer ? volunteerAreas : null,
       volunteer_time: needs.volunteer ? volunteerTime : null,
       in_organization: inOrganization,

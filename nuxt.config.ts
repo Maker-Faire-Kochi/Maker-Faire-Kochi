@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   experimental: { componentIslands: true },
 
   /**
-   * Admin is organizer-only. SPA mode so the lock middleware always runs in
+   * Admin is owner-only. SPA mode so the lock middleware always runs in
    * the browser before any dashboard HTML is painted (no SSR leak of shell).
    */
   routeRules: {
@@ -19,12 +19,14 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || '',
-    /** Only this email may approve organizer access requests (also public for client UI). */
+    /**
+     * The one account allowed into /admin. Server-only on purpose: anything
+     * under `public` is serialized into the HTML of every page, homepage included.
+     */
     adminOwnerEmail: process.env.NUXT_ADMIN_OWNER_EMAIL || '',
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      adminOwnerEmail: process.env.NUXT_ADMIN_OWNER_EMAIL || '',
       /**
        * Public origin for social metadata.
        *

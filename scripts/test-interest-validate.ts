@@ -50,6 +50,58 @@ assert(
   'honeypot rejected',
 )
 
+{
+  const r = validateInterestInput({ ...base, name: 'x'.repeat(121) })
+  assert(r.ok === false, 'name over 120 chars fails')
+}
+
+{
+  const r = validateInterestInput({ ...base, anythingElse: 'x'.repeat(4001) })
+  assert(r.ok === false, 'anything_else over 4000 chars fails')
+}
+
+{
+  const r = validateInterestInput({
+    ...base,
+    participation: ['attend', 'attend', 'attend'] as never,
+  })
+  assert(
+    r.ok === true && (r.data.participation as string[]).length === 1,
+    'duplicate participation values are collapsed',
+  )
+}
+
+{
+  const r = validateInterestInput({
+    ...base,
+    contributeText: 'stale text from a hidden section',
+    hasProject: 'yes' as never,
+    projectDescription: 'stale',
+  })
+  assert(
+    r.ok === true &&
+      r.data.contribute_text === null &&
+      r.data.has_project === null &&
+      r.data.project_description === null,
+    'attend-only drops answers from hidden sections',
+  )
+}
+
+{
+  const r = validateInterestInput({
+    ...base,
+    participation: ['exhibit'] as never,
+    contributeText: 'A drone',
+    hasProject: 'yes' as never,
+    projectDescription: 'Quadcopter',
+    projectCategories: ['robotics'] as never,
+  })
+  assert(
+    r.ok === true && r.data.project_description === 'Quadcopter',
+    'exhibit with project keeps project fields',
+  )
+}
+
 if (failed) {
   console.error(`\n${failed} failure(s)`)
   process.exit(1)

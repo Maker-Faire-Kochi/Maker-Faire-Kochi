@@ -17,7 +17,7 @@ useHead({
         <NuxtLink to="/admin/login" class="nav-link">Login</NuxtLink>
         <a href="/interestform" class="nav-link">Form</a>
       </nav>
-      <span class="admin-badge">Organizer</span>
+      <span class="admin-badge">Admin</span>
     </header>
     <main class="admin-main">
       <slot />

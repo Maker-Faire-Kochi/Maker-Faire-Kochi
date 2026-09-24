@@ -40,6 +40,13 @@ function tally(
     .sort((a, b) => b.count - a.count)
 }
 
+/** Viewer-local calendar day. `toISOString()` is UTC, which in IST files a 00:00–05:29 entry under yesterday. */
+function localDayKey(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
 function labelMap(opts: readonly { value: string; label: string }[]) {
   const m = new Map(opts.map((o) => [o.value, o.label]))
   return (v: string) => m.get(v) || v
@@ -51,14 +58,14 @@ export function useInterestAnalytics(rows: Ref<InterestResponseRow[]>) {
     const now = Date.now()
     const day = 24 * 60 * 60 * 1000
     const weekAgo = now - 7 * day
-    const dayAgo = now - day
+    const todayKey = localDayKey(new Date())
 
     const byStatus = tally(all, (r) => r.status, labelMap(STATUSES))
     const newCount = all.filter((r) => r.status === 'new').length
 
     return {
       total: all.length,
-      today: all.filter((r) => new Date(r.created_at).getTime() >= dayAgo).length,
+      today: all.filter((r) => localDayKey(new Date(r.created_at)) === todayKey).length,
       week: all.filter((r) => new Date(r.created_at).getTime() >= weekAgo).length,
       newCount,
       exhibit: all.filter((r) => r.participation.includes('exhibit')).length,
@@ -110,7 +117,7 @@ export function useInterestAnalytics(rows: Ref<InterestResponseRow[]>) {
       const d = new Date(now)
       d.setHours(0, 0, 0, 0)
       d.setDate(d.getDate() - i)
-      const key = d.toISOString().slice(0, 10)
+      const key = localDayKey(d)
       days.push({
         key,
         label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
@@ -119,8 +126,7 @@ export function useInterestAnalytics(rows: Ref<InterestResponseRow[]>) {
     }
     const index = new Map(days.map((d, i) => [d.key, i]))
     for (const r of rows.value) {
-      const key = r.created_at.slice(0, 10)
-      const i = index.get(key)
+      const i = index.get(localDayKey(new Date(r.created_at)))
       if (i !== undefined) days[i].count += 1
     }
     return days
@@ -165,8 +171,10 @@ export function responsesToCsv(rows: InterestResponseRow[]): string {
   ]
   const esc = (v: unknown) => {
     if (v == null) return ''
-    const s = Array.isArray(v) ? v.join('; ') : String(v)
-    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+    let s = Array.isArray(v) ? v.join('; ') : String(v)
+    // Public input: a leading = + - @ would run as a formula in Excel / Sheets.
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`
+    if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
     return s
   }
   const lines = [headers.join(',')]
@@ -177,5 +185,6 @@ export function responsesToCsv(rows: InterestResponseRow[]): string {
         .join(','),
     )
   }
-  return lines.join('\n')
+  // BOM so Excel opens UTF-8 (Malayalam names) correctly.
+  return '\uFEFF' + lines.join('\r\n')
 }

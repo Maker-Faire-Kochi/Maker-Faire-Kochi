@@ -1,7 +1,6 @@
 import { computed, reactive, ref } from 'vue'
 import { emptyInterestForm, type InterestFormInput } from '~~/shared/interest/types'
 import { interestNeeds } from '~~/shared/interest/validate'
-import { EXHIBIT_LIKE } from '~~/shared/interest/constants'
 
 export function useInterestForm() {
   const form = reactive<InterestFormInput>(emptyInterestForm())
@@ -9,30 +8,11 @@ export function useInterestForm() {
   const submitted = ref(false)
   const errors = ref<string[]>([])
 
-  const needs = computed(() => {
-    const n = interestNeeds(form.participation)
-    return {
-      ...n,
-      projectDetails: n.projectBlock && form.hasProject === 'yes',
-      org:
-        n.org ||
-        form.inOrganization === true ||
-        form.participation.includes('org_booth'),
-    }
-  })
+  const needs = computed(() => interestNeeds(form.participation))
 
   const showContribute = computed(() => needs.value.contribute)
-  const showProjectBlock = computed(() =>
-    form.participation.some((p) => EXHIBIT_LIKE.has(p)),
-  )
-  const showVolunteer = computed(() => form.participation.includes('volunteer'))
-  const showOrgQuestion = computed(
-    () =>
-      form.participation.includes('org_booth') ||
-      form.participation.includes('organize') ||
-      form.participation.includes('sponsor') ||
-      true, // always ask lightly — plan had section 5 for everyone
-  )
+  const showProjectBlock = computed(() => needs.value.projectBlock)
+  const showVolunteer = computed(() => needs.value.volunteer)
 
   function toggleParticipation(value: InterestFormInput['participation'][number]) {
     const i = form.participation.indexOf(value)
@@ -73,11 +53,9 @@ export function useInterestForm() {
     submitting,
     submitted,
     errors,
-    needs,
     showContribute,
     showProjectBlock,
     showVolunteer,
-    showOrgQuestion,
     toggleParticipation,
     toggleCategory,
     toggleVolunteerArea,

@@ -1,19 +1,5 @@
-/**
- * Auth gate for /admin/*
- * - login / callback: public
- * - pending: signed-in, not yet staff
- * - dashboard (and rest): staff only
- */
+/** /admin is owner-only. Any other session is signed out. */
 export default defineNuxtRouteMiddleware(async (to) => {
-  if (
-    to.path === '/admin/login' ||
-    to.path.startsWith('/admin/login/') ||
-    to.path === '/admin/callback' ||
-    to.path.startsWith('/admin/callback/')
-  ) {
-    return
-  }
-
   if (import.meta.server) return
 
   const config = useRuntimeConfig()
@@ -21,21 +7,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo({ path: '/admin/login', query: { reason: 'config' } })
   }
 
-  const { getAdminSession } = await import('~/modules/admin/composables/useAdminSession')
-  const { session, organizer } = await getAdminSession()
-  const isPendingRoute = to.path === '/admin/pending' || to.path.startsWith('/admin/pending/')
+  const { getAdminSession, lockAdminSession } = await import(
+    '~/modules/admin/composables/useAdminSession'
+  )
+  const { session, owner } = await getAdminSession()
 
   if (!session) {
     return navigateTo({ path: '/admin/login', query: { next: to.fullPath } })
   }
-
-  if (organizer) {
-    if (isPendingRoute) return navigateTo('/admin')
-    return
-  }
-
-  // Signed in, not approved → waiting room only
-  if (!isPendingRoute) {
-    return navigateTo('/admin/pending')
+  if (!owner) {
+    await lockAdminSession()
+    return navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
   }
 })

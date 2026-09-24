@@ -12,6 +12,7 @@ import {
   VOLUNTEER_AREAS,
   VOLUNTEER_TIME,
 } from '~~/shared/interest/constants'
+import { MAX_LEN } from '~~/shared/interest/validate'
 import { useInterestForm } from '../composables/useInterestForm'
 
 const {
@@ -77,13 +78,13 @@ async function onSubmit(e: Event) {
 
       <InterestSection title="1. Basic information">
         <InterestField label="Name" required html-for="name">
-          <input id="name" v-model="form.name" class="at-input" type="text" name="name" autocomplete="name" required />
+          <input id="name" v-model="form.name" :maxlength="MAX_LEN.name" class="at-input" type="text" name="name" autocomplete="name" required />
         </InterestField>
         <InterestField label="Email address" required html-for="email">
-          <input id="email" v-model="form.email" class="at-input" type="email" name="email" autocomplete="email" required />
+          <input id="email" v-model="form.email" :maxlength="MAX_LEN.email" class="at-input" type="email" name="email" autocomplete="email" required />
         </InterestField>
         <InterestField label="Phone number" hint="Optional" html-for="phone">
-          <input id="phone" v-model="form.phone" class="at-input" type="tel" name="phone" autocomplete="tel" />
+          <input id="phone" v-model="form.phone" :maxlength="MAX_LEN.phone" class="at-input" type="tel" name="phone" autocomplete="tel" />
         </InterestField>
         <InterestField label="Where are you from?" required>
           <div class="at-choices" role="radiogroup" aria-label="Where are you from?">
@@ -103,6 +104,7 @@ async function onSubmit(e: Event) {
           <input
             v-if="form.selfDescribe === 'other'"
             v-model="form.selfDescribeOther"
+            :maxlength="MAX_LEN.short"
             class="at-input at-input-follow"
             type="text"
             placeholder="Tell us more"
@@ -132,7 +134,7 @@ async function onSubmit(e: Event) {
           hint="Ideas beyond the checklist are welcome — that's the spirit of a Maker Faire."
           html-for="makePossible"
         >
-          <textarea id="makePossible" v-model="form.makePossible" class="at-textarea" rows="3" />
+          <textarea id="makePossible" v-model="form.makePossible" :maxlength="MAX_LEN.long" class="at-textarea" rows="3" />
         </InterestField>
       </InterestSection>
 
@@ -144,7 +146,7 @@ async function onSubmit(e: Event) {
           required
           html-for="contribute"
         >
-          <textarea id="contribute" v-model="form.contributeText" class="at-textarea" rows="4" />
+          <textarea id="contribute" v-model="form.contributeText" :maxlength="MAX_LEN.long" class="at-textarea" rows="4" />
         </InterestField>
         <template v-if="showProjectBlock">
           <InterestField label="Do you already have a project or idea you'd like to showcase?" required>
@@ -157,7 +159,7 @@ async function onSubmit(e: Event) {
           </InterestField>
           <template v-if="form.hasProject === 'yes'">
             <InterestField label="Tell us about your project." required html-for="project">
-              <textarea id="project" v-model="form.projectDescription" class="at-textarea" rows="4" />
+              <textarea id="project" v-model="form.projectDescription" :maxlength="MAX_LEN.long" class="at-textarea" rows="4" />
             </InterestField>
             <InterestField label="What category does your project fall under?" required>
               <div class="at-choices">
@@ -213,7 +215,7 @@ async function onSubmit(e: Event) {
         </InterestField>
         <template v-if="form.inOrganization === true || form.participation.includes('org_booth')">
           <InterestField label="Organization / community name" required html-for="orgName">
-            <input id="orgName" v-model="form.orgName" class="at-input" type="text" />
+            <input id="orgName" v-model="form.orgName" :maxlength="MAX_LEN.short" class="at-input" type="text" />
           </InterestField>
           <InterestField label="Would your organization be interested in collaborating with Maker Faire Kochi?" required>
             <div class="at-choices" role="radiogroup">
@@ -237,13 +239,14 @@ async function onSubmit(e: Event) {
           <input
             v-if="form.heardFrom === 'other'"
             v-model="form.heardFromOther"
+            :maxlength="MAX_LEN.short"
             class="at-input at-input-follow"
             type="text"
             placeholder="Where did you hear about us?"
           />
         </InterestField>
         <InterestField label="Anything else you'd like to tell us?" hint="Optional" html-for="else">
-          <textarea id="else" v-model="form.anythingElse" class="at-textarea" rows="3" />
+          <textarea id="else" v-model="form.anythingElse" :maxlength="MAX_LEN.long" class="at-textarea" rows="3" />
         </InterestField>
       </InterestSection>
 

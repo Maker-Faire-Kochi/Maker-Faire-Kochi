@@ -2,11 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Lock } from '@lucide/vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
-import {
-  authHeaders,
-  isStaffUser,
-  lockAdminSession,
-} from '../composables/useAdminSession'
+import { isOwnerUser, lockAdminSession } from '../composables/useAdminSession'
 
 type Step = 'email' | 'otp'
 
@@ -17,48 +13,29 @@ const status = ref<'idle' | 'sending' | 'verifying' | 'error'>('idle')
 const message = ref('')
 const route = useRoute()
 
-const redirectTo = () => `${window.location.origin}/admin/callback`
-
 const lockReason = computed(() => {
   const r = route.query.reason
   if (r === 'config') {
     return 'Admin is locked: Supabase URL / anon key are not configured on this deploy.'
   }
+  if (r === 'forbidden') {
+    return 'That account does not have access to this dashboard.'
+  }
   if (r === 'signedout') {
-    return 'You were signed out. Sign up or sign in with your email for a one-time code.'
+    return 'You were signed out. Sign in again with a one-time code.'
   }
   return ''
 })
 
-async function routeAfterSession() {
-  const supabase = useAdminSupabase()
-  const { data } = await supabase.auth.getSession()
-  if (!data.session) {
-    await navigateTo('/admin/login')
-    return
-  }
-  if (isStaffUser(data.session.user)) {
-    await navigateTo('/admin')
-    return
-  }
-  try {
-    const headers = await authHeaders()
-    await $fetch('/api/admin/register-pending', {
-      method: 'POST',
-      headers,
-      body: {},
-    })
-  } catch {
-    /* still send them to waiting room */
-  }
-  await navigateTo('/admin/pending')
+function nextPath(): string {
+  const n = route.query.next
+  return typeof n === 'string' && n.startsWith('/admin') ? n : '/admin'
 }
 
 onMounted(async () => {
   try {
-    const supabase = useAdminSupabase()
-    const { data } = await supabase.auth.getSession()
-    if (data.session) await routeAfterSession()
+    const { data } = await useAdminSupabase().auth.getSession()
+    if (isOwnerUser(data.session?.user)) await navigateTo(nextPath())
   } catch {
     /* config missing */
   }
@@ -67,24 +44,18 @@ onMounted(async () => {
 async function sendOtp() {
   status.value = 'sending'
   message.value = ''
-  const addr = email.value.trim().toLowerCase()
   try {
-    const supabase = useAdminSupabase()
-    // Signup allowed; dashboard still closed until owner Approves.
-    const { error } = await supabase.auth.signInWithOtp({
-      email: addr,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: redirectTo(),
-      },
+    await $fetch('/api/admin/send-code', {
+      method: 'POST',
+      body: { email: email.value.trim().toLowerCase() },
     })
-    if (error) throw error
     step.value = 'otp'
     status.value = 'idle'
-    message.value = 'Check your email for a 6-digit code (and/or magic link).'
+    message.value = 'If this is the admin address, a 6-digit code is on its way.'
   } catch (e: unknown) {
+    const err = e as { data?: { statusMessage?: string }; statusMessage?: string }
     status.value = 'error'
-    message.value = e instanceof Error ? e.message : 'Could not send code'
+    message.value = err?.data?.statusMessage || err?.statusMessage || 'Could not send code'
   }
 }
 
@@ -99,10 +70,11 @@ async function verifyOtp() {
       type: 'email',
     })
     if (error) throw error
-    if (!data.session) {
-      throw new Error('No session after code')
+    if (!isOwnerUser(data.session?.user)) {
+      await lockAdminSession()
+      throw new Error('That account does not have access to this dashboard.')
     }
-    await routeAfterSession()
+    await navigateTo(nextPath())
   } catch (e: unknown) {
     status.value = 'error'
     message.value = e instanceof Error ? e.message : 'Invalid or expired code'
@@ -135,10 +107,10 @@ async function forceLock() {
       <Lock :size="14" :stroke-width="2.5" aria-hidden="true" />
       Locked
     </div>
-    <h1>Organizer sign in</h1>
+    <h1>Admin sign in</h1>
     <p class="sub">
-      Sign up with your email and a one-time code. After signup the dashboard stays
-      <strong>closed</strong> until the owner Approves you in Team.
+      This dashboard belongs to one account. Enter its email and we will send a
+      one-time code.
     </p>
 
     <div v-if="lockReason" class="lock-banner" role="alert">
@@ -157,7 +129,7 @@ async function forceLock() {
         placeholder="you@example.com"
       />
       <button class="btn" type="submit" :disabled="status === 'sending'">
-        {{ status === 'sending' ? 'Sending code…' : 'Continue with email' }}
+        {{ status === 'sending' ? 'Sending code…' : 'Send code' }}
       </button>
     </form>
 
@@ -254,7 +226,7 @@ h1 {
   margin-left: 0.5rem;
   border: none;
   background: none;
-  color: var(--color-cyan);
+  color: var(--color-ink);
   font: inherit;
   font-weight: 600;
   cursor: pointer;

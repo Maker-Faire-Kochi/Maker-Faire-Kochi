@@ -784,16 +784,11 @@ plausible-looking invention.
   field, showed "You're on the list", and reset after five seconds. There was no endpoint and no
   storage — **every address typed into it was silently discarded.** Removing it was the honest
   outcome. If it returns, it needs a provider AND the rail's keyboard avoidance back.
-- **A dead primary CTA is worse than no primary CTA.** All five proposal buttons were removed
-  rather than restyled or pointed at a guess. `NetHero.vue`, `MakerHeader.vue`, `MakerAbout.vue`,
-  `MakerCategories.vue` and `MakerFooter.vue` each carry a comment saying where to restore it.
-  `.pill-cta` went with the nav's Join pill.
-  `.btn-maker-primary` / `.btn-maker-secondary` are deliberately KEPT in `main.css` despite being
-  momentarily unreferenced — they are design-system primitives waiting on a real destination, not
-  dead code like `.card-maker` was.
-- **The hero's one remaining button stays the dark-ground NEUTRAL.** Promoting "Learn More" to the
-  red primary because it is now the only button would paint plain navigation as the page's
-  conversion action. It scrolls; it should not shout.
+- **A dead primary CTA is worse than no primary CTA.** The five proposal buttons pointed at a
+  `forms.gle` link that did not exist, so they were removed rather than pointed at a guess. They
+  now point at the real `/interestform` (see "Interest form and admin" below). The rule stands:
+  never ship a CTA to a destination that is not live.
+
 - **`@lucide/vue` ships no brand icons** — `Instagram`, `Twitter`, `Youtube` are not exported
   (verified against the installed 1.33.0 declarations). The Instagram glyph is therefore an
   **inline SVG**; `Mail` beside it is a Lucide icon, so the two match in stroke weight. The old
@@ -848,13 +843,45 @@ plausible-looking invention.
 - **`app/components/hero/NetHero.vue` auto-imports as `HeroNetHero`** (Nuxt `pathPrefix`).
   `app.vue` imports it explicitly instead.
 
+### Interest form and admin
+
+`/interestform` (public, SSR) and `/admin` (owner-only, `ssr: false`). Code lives in
+`app/modules/interest`, `app/modules/admin`, `shared/interest` and `server/`. Setup is in
+`supabase/README.md`. Validation smoke test: `npm run test:interest`.
+
+- **`/admin` is ONE account, on purpose.** There was an organizer sign-up + owner-approval flow;
+  it was deleted on the owner's instruction. `POST /api/admin/send-code` emails a code ONLY to
+  `NUXT_ADMIN_OWNER_EMAIL`, first creating that Auth user and setting `app_metadata.role =
+  owner`. Every other address gets the same `{ ok: true }` and no email, so the endpoint cannot
+  be used to discover the owner. Supabase sign-ups stay OFF; the admin API ignores that setting.
+- **Never put the owner email in `runtimeConfig.public`.** Public config is serialized into the
+  HTML of every page, homepage included. It was there once; verify with
+  `curl -s localhost:3000/ | grep -c <owner email>` → 0.
+- **RLS is the lock; the middleware is a UI gate.** Policies read `app_metadata.role = 'owner'`
+  from the JWT. `app_metadata` cannot be written by a client, only by the service role.
+- **Updates may change `status` and nothing else** — enforced by a trigger comparing
+  `to_jsonb(new) - 'status'` with `old`, so new columns are covered automatically.
+- **Text caps live in TWO places that must agree:** `MAX_LEN` in `shared/interest/validate.ts`
+  and the `interest_responses_len_caps` CHECK in `20260924160000_single_owner.sql`.
+- **Answers from hidden sections are dropped server-side.** Tick "exhibit", type a project,
+  untick it: the browser still holds the text. `validateInterestInput` nulls it.
+- **CSV export prefixes `= + - @` with `'`.** The cells are public input; unescaped they run as
+  formulas when the owner opens the file.
+- **Dashboard days are the VIEWER's local calendar day.** `toISOString().slice(0, 10)` is UTC and
+  files anything 00:00–05:29 IST under yesterday.
+- **The dashboard pages through results.** PostgREST returns at most 1000 rows per request, so a
+  single `select('*')` would silently truncate every chart past 1000 responses.
+- **Rate limits do not read `x-forwarded-for`** — its first entry is client-supplied. They use the
+  host-set `x-nf-client-connection-ip` / `cf-connecting-ip` / `x-real-ip`. They are in-memory
+  per instance, so serverless cold starts reset them; good enough for a v1 interest form.
+
 ## Still open
 
 **Waiting on the owner (the site ships correct-but-incomplete until these land):**
 
 - **X and YouTube handles** — footer currently shows Instagram + email only.
-- **A real exhibitor/proposal destination.** Five CTAs were removed and are commented in place;
-  the page currently has NO conversion action.
+- **Registration.** `/interestform` gathers interest only; tickets / exhibitor registration are
+  a separate, later flow and must not reuse `interest_responses`.
 - **The venue.** Then update `EVENT.venueLabel` and the JSON-LD `Place` (street, pincode, geo).
 - **A 1200x630 share image.** `twitter:card` is `summary_large_image`, which expects ~1.91:1,
   but `og:image` is the **512x512 square** logo — previews crop badly or downgrade.
