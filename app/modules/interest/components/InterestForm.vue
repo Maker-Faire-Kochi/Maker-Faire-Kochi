@@ -46,7 +46,7 @@ async function onSubmit(e: Event) {
         />
         <span>Maker Faire Kochi</span>
       </a>
-      <h1 class="at-title">Get Involved</h1>
+      <h1 class="at-title">Get <span class="at-title-accent">Involved</span></h1>
       <p class="at-lede">
         Make. Share. Build. Connect. Maker Faire Kochi brings together makers, creators,
         students, artists, innovators, educators, and curious minds. Tell us how you'd
@@ -58,6 +58,7 @@ async function onSubmit(e: Event) {
     </header>
 
     <div v-if="submitted" class="at-card at-thanks" role="status">
+      <div class="at-brand-bar" aria-hidden="true"><span class="cyan" /><span class="red" /></div>
       <h2>Thanks — you're on our radar.</h2>
       <p>
         We read every response. If you offered to exhibit, volunteer, or partner, expect a
@@ -67,6 +68,7 @@ async function onSubmit(e: Event) {
     </div>
 
     <form v-else class="at-card" novalidate @submit="onSubmit">
+      <div class="at-brand-bar" aria-hidden="true"><span class="cyan" /><span class="red" /></div>
       <!-- honeypot -->
       <div class="at-hp" aria-hidden="true">
         <label for="website">Website</label>
@@ -280,6 +282,7 @@ async function onSubmit(e: Event) {
 }
 .at-logo img {
   border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--color-cyan);
 }
 .at-title {
   margin: 0 0 0.75rem;
@@ -288,6 +291,10 @@ async function onSubmit(e: Event) {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-ink);
+}
+/* Large display accent — --color-red clears 3:1 large-text on white. */
+.at-title-accent {
+  color: var(--color-red);
 }
 .at-lede {
   margin: 0 0 0.75rem;
@@ -301,21 +308,38 @@ async function onSubmit(e: Event) {
   color: var(--color-muted);
   line-height: 1.45;
 }
+.at-brand-bar {
+  display: flex;
+  gap: 0.35rem;
+  height: 3px;
+  margin: 0.35rem 0 0.75rem;
+}
+.at-brand-bar .cyan {
+  flex: 2;
+  border-radius: 2px;
+  background: var(--color-cyan);
+}
+.at-brand-bar .red {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--color-red);
+}
 .at-card {
-  background: #fff;
-  border: 1px solid #e5e9ef;
+  background: var(--color-white);
+  border: 1px solid var(--separator);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04);
-  padding: 0.5rem 1.35rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(41, 41, 41, 0.04), 0 8px 24px rgba(0, 174, 239, 0.06);
+  padding: 0.85rem 1.35rem 1.5rem;
 }
 .at-thanks {
-  padding: 2rem 1.5rem;
+  padding: 1.25rem 1.5rem 2rem;
   text-align: left;
 }
 .at-thanks h2 {
   margin: 0 0 0.75rem;
   font-family: var(--font-body);
   font-size: 1.35rem;
+  color: var(--color-ink);
 }
 .at-thanks p {
   margin: 0 0 1.25rem;
@@ -329,8 +353,8 @@ async function onSubmit(e: Event) {
   font-family: var(--font-body);
   font-size: 1rem;
   color: var(--color-ink);
-  background: #fff;
-  border: 1px solid #cfd6e0;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-400);
   border-radius: 8px;
   padding: 0.7rem 0.85rem;
   min-height: 44px;
@@ -344,8 +368,8 @@ async function onSubmit(e: Event) {
 .at-input:focus,
 .at-textarea:focus {
   outline: none;
-  border-color: #7eb6ff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.22);
 }
 .at-input-follow {
   margin-top: 0.65rem;
@@ -367,7 +391,10 @@ async function onSubmit(e: Event) {
   color: var(--color-ink);
 }
 .at-choice:hover {
-  background: #f4f7fb;
+  background: rgba(0, 174, 239, 0.06);
+}
+.at-choice:has(input:checked) {
+  background: rgba(0, 174, 239, 0.1);
 }
 .at-choice input {
   margin-top: 0.2rem;
@@ -388,18 +415,21 @@ async function onSubmit(e: Event) {
   border: none;
   border-radius: 8px;
   background: var(--color-red-cta);
-  color: #fff;
+  color: var(--color-white);
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
+}
+.at-submit:hover:not(:disabled) {
+  filter: brightness(0.96);
 }
 .at-submit:disabled {
   opacity: 0.65;
   cursor: wait;
 }
 .at-submit:focus-visible {
-  outline: 2px solid var(--color-ink);
+  outline: 2px solid var(--color-cyan);
   outline-offset: 2px;
 }
 .at-btn-secondary {
@@ -408,22 +438,25 @@ async function onSubmit(e: Event) {
   align-items: center;
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  border: 1px solid #cfd6e0;
+  border: 1px solid var(--color-cyan);
   color: var(--color-ink);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
 }
+.at-btn-secondary:hover {
+  background: rgba(0, 174, 239, 0.08);
+}
 .at-errors {
-  background: #fff5f5;
-  border: 1px solid #f5c2c2;
+  background: rgba(196, 18, 26, 0.06);
+  border: 1px solid rgba(196, 18, 26, 0.28);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   margin: 0.5rem 0 1rem;
 }
 .at-errors p {
   margin: 0.2rem 0;
-  color: #9b1c1c;
+  color: var(--color-red-cta);
   font-size: 0.875rem;
 }
 .at-hp {
