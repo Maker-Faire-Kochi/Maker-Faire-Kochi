@@ -11,9 +11,12 @@ export default defineNuxtRouteMiddleware(async () => {
     const { getAdminSession } = await import(
       '~/modules/admin/composables/useAdminSession'
     )
-    const { organizer } = await getAdminSession()
+    const { session, organizer } = await getAdminSession()
     if (organizer) {
       return navigateTo('/admin')
+    }
+    if (session) {
+      return navigateTo('/admin/pending')
     }
   } catch {
     // Missing config / client — stay on login

@@ -2,7 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { Lock } from '@lucide/vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
-import { isOrganizerUser, lockAdminSession } from '../composables/useAdminSession'
+import {
+  authHeaders,
+  isStaffUser,
+  lockAdminSession,
+} from '../composables/useAdminSession'
 
 type Step = 'email' | 'otp'
 
@@ -17,29 +21,44 @@ const redirectTo = () => `${window.location.origin}/admin/callback`
 
 const lockReason = computed(() => {
   const r = route.query.reason
-  if (r === 'forbidden') {
-    return 'That account signed in, but it is not an organizer. Access stays locked. Set app_metadata.role = "organizer" on the user in Supabase, then try again.'
-  }
   if (r === 'config') {
     return 'Admin is locked: Supabase URL / anon key are not configured on this deploy.'
   }
   if (r === 'signedout') {
-    return 'You were signed out. Enter your organizer email for a one-time code.'
-  }
-  if (r === 'unknown') {
-    return 'No account for that email. Accounts are invite-only — ask an organizer to create yours in Supabase Auth.'
+    return 'You were signed out. Sign up or sign in with your email for a one-time code.'
   }
   return ''
 })
+
+async function routeAfterSession() {
+  const supabase = useAdminSupabase()
+  const { data } = await supabase.auth.getSession()
+  if (!data.session) {
+    await navigateTo('/admin/login')
+    return
+  }
+  if (isStaffUser(data.session.user)) {
+    await navigateTo('/admin')
+    return
+  }
+  try {
+    const headers = await authHeaders()
+    await $fetch('/api/admin/register-pending', {
+      method: 'POST',
+      headers,
+      body: {},
+    })
+  } catch {
+    /* still send them to waiting room */
+  }
+  await navigateTo('/admin/pending')
+}
 
 onMounted(async () => {
   try {
     const supabase = useAdminSupabase()
     const { data } = await supabase.auth.getSession()
-    if (data.session && isOrganizerUser(data.session.user)) {
-      const next = typeof route.query.next === 'string' ? route.query.next : '/admin'
-      await navigateTo(next.startsWith('/admin') ? next : '/admin')
-    }
+    if (data.session) await routeAfterSession()
   } catch {
     /* config missing */
   }
@@ -51,23 +70,15 @@ async function sendOtp() {
   const addr = email.value.trim().toLowerCase()
   try {
     const supabase = useAdminSupabase()
-    // shouldCreateUser: false → only pre-created invite accounts can unlock.
+    // Signup allowed; dashboard still closed until owner Approves.
     const { error } = await supabase.auth.signInWithOtp({
       email: addr,
       options: {
-        shouldCreateUser: false,
+        shouldCreateUser: true,
         emailRedirectTo: redirectTo(),
       },
     })
-    if (error) {
-      const msg = error.message.toLowerCase()
-      if (msg.includes('signups not allowed') || msg.includes('user not found')) {
-        await navigateTo({ path: '/admin/login', query: { reason: 'unknown' } })
-        status.value = 'idle'
-        return
-      }
-      throw error
-    }
+    if (error) throw error
     step.value = 'otp'
     status.value = 'idle'
     message.value = 'Check your email for a 6-digit code (and/or magic link).'
@@ -88,12 +99,10 @@ async function verifyOtp() {
       type: 'email',
     })
     if (error) throw error
-    if (!data.session || !isOrganizerUser(data.session.user)) {
-      await lockAdminSession()
-      await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
-      return
+    if (!data.session) {
+      throw new Error('No session after code')
     }
-    await navigateTo('/admin')
+    await routeAfterSession()
   } catch (e: unknown) {
     status.value = 'error'
     message.value = e instanceof Error ? e.message : 'Invalid or expired code'
@@ -115,7 +124,7 @@ async function forceLock() {
   }
   step.value = 'email'
   otp.value = ''
-  message.value = 'Session cleared. Dashboard is locked.'
+  message.value = 'Session cleared.'
   status.value = 'idle'
 }
 </script>
@@ -126,10 +135,10 @@ async function forceLock() {
       <Lock :size="14" :stroke-width="2.5" aria-hidden="true" />
       Locked
     </div>
-    <h1>Organizer dashboard</h1>
+    <h1>Organizer sign in</h1>
     <p class="sub">
-      Invite-only accounts. Sign in with a one-time code emailed to you — no public
-      signup. Only users the <strong>owner</strong> has Accepted unlock this panel.
+      Sign up with your email and a one-time code. After signup the dashboard stays
+      <strong>closed</strong> until the owner Approves you in Team.
     </p>
 
     <div v-if="lockReason" class="lock-banner" role="alert">
@@ -137,7 +146,7 @@ async function forceLock() {
     </div>
 
     <form v-if="step === 'email'" @submit.prevent="sendOtp">
-      <label class="lbl" for="admin-email">Organizer email</label>
+      <label class="lbl" for="admin-email">Email</label>
       <input
         id="admin-email"
         v-model="email"
@@ -148,7 +157,7 @@ async function forceLock() {
         placeholder="you@example.com"
       />
       <button class="btn" type="submit" :disabled="status === 'sending'">
-        {{ status === 'sending' ? 'Sending code…' : 'Send one-time code' }}
+        {{ status === 'sending' ? 'Sending code…' : 'Continue with email' }}
       </button>
     </form>
 
@@ -171,7 +180,7 @@ async function forceLock() {
         placeholder="123456"
       />
       <button class="btn" type="submit" :disabled="status === 'verifying' || otp.trim().length < 6">
-        {{ status === 'verifying' ? 'Unlocking…' : 'Unlock dashboard' }}
+        {{ status === 'verifying' ? 'Signing in…' : 'Verify code' }}
       </button>
       <button
         type="button"
@@ -184,9 +193,8 @@ async function forceLock() {
     </form>
 
     <p v-if="message" class="msg" :class="{ err: status === 'error' }">{{ message }}</p>
-    <a href="/admin/request" class="request-link">Need an account? Request access</a>
     <button type="button" class="linkish" @click="forceLock">
-      Clear any local session (re-lock)
+      Clear any local session
     </button>
   </div>
 </template>
@@ -226,12 +234,6 @@ h1 {
   color: var(--color-muted);
   font-size: 0.875rem;
   line-height: 1.45;
-}
-.sub code {
-  font-size: 0.75rem;
-  background: var(--bg-grouped);
-  padding: 0.1rem 0.3rem;
-  border-radius: 4px;
 }
 .lock-banner {
   background: rgba(196, 18, 26, 0.08);
@@ -309,19 +311,6 @@ h1 {
 }
 .msg.err {
   color: #9b1c1c;
-}
-.request-link {
-  display: block;
-  margin-top: 1.25rem;
-  text-align: center;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-cyan);
-  text-decoration: none;
-}
-.request-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 .linkish {
   display: block;

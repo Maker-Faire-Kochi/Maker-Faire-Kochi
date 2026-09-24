@@ -70,8 +70,8 @@ onMounted(load)
       <div>
         <h2>Team access</h2>
         <p class="sub">
-          Only your owner account can accept these. Approving creates their Supabase
-          login and sets <code>role: organizer</code>. They sign in with email OTP.
+          People sign up at login, then wait here. Only you can
+          <strong>Accept</strong> (opens their dashboard) or <strong>Reject</strong>.
         </p>
       </div>
       <div class="filters">

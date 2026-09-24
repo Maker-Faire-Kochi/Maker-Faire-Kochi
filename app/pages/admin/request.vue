@@ -1,16 +1,8 @@
 <script setup lang="ts">
-import AdminAccessRequest from '~/modules/admin/components/AdminAccessRequest.vue'
-
-definePageMeta({
-  layout: 'admin',
-  middleware: [],
-})
-
-useSeoMeta({ title: 'Request organizer access — Maker Faire Kochi' })
+/** Old /admin/request → signup is now on login. */
+await navigateTo('/admin/login', { replace: true })
 </script>
 
 <template>
-  <ClientOnly>
-    <AdminAccessRequest />
-  </ClientOnly>
+  <p>Redirecting…</p>
 </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
- * Magic-link return URL (email OTP link click).
- * Code entry happens on /admin/login; this path only finishes link-based unlock.
+ * Magic-link return: finish session, then dashboard or waiting room.
  */
 definePageMeta({
   layout: 'admin',
@@ -18,7 +17,7 @@ onMounted(async () => {
     const { useAdminSupabase } = await import(
       '~/modules/admin/composables/useAdminSupabase'
     )
-    const { isOrganizerUser, lockAdminSession } = await import(
+    const { authHeaders, isStaffUser } = await import(
       '~/modules/admin/composables/useAdminSession'
     )
     const supabase = useAdminSupabase()
@@ -42,23 +41,26 @@ onMounted(async () => {
     await new Promise((r) => setTimeout(r, 50))
     const { data, error } = await supabase.auth.getSession()
     if (error) throw error
-
     if (!data.session) {
-      status.value = 'fail'
       await navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
       return
     }
 
-    if (!isOrganizerUser(data.session.user)) {
-      await lockAdminSession()
-      status.value = 'fail'
-      await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
+    if (isStaffUser(data.session.user)) {
+      status.value = 'ok'
+      await navigateTo('/admin')
       return
     }
 
+    try {
+      const headers = await authHeaders()
+      await $fetch('/api/admin/register-pending', { method: 'POST', headers, body: {} })
+    } catch {
+      /* ignore */
+    }
     status.value = 'ok'
-    detail.value = 'Unlocked. Opening dashboard…'
-    await navigateTo('/admin')
+    detail.value = 'Account created — waiting for owner approval…'
+    await navigateTo('/admin/pending')
   } catch (e: unknown) {
     status.value = 'fail'
     detail.value = e instanceof Error ? e.message : 'Sign-in failed'

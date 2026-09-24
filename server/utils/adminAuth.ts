@@ -19,8 +19,7 @@ export function isOwnerUser(user: User | null | undefined, ownerEmail?: string):
   return user.email.toLowerCase() === owner
 }
 
-/** Resolve the caller from Authorization: Bearer <access_token>. */
-export async function requireStaffUser(event: H3Event): Promise<User> {
+async function userFromBearer(event: H3Event): Promise<User> {
   const auth = getHeader(event, 'authorization')
   const token = auth?.startsWith('Bearer ') ? auth.slice(7).trim() : ''
   if (!token) {
@@ -42,10 +41,20 @@ export async function requireStaffUser(event: H3Event): Promise<User> {
   if (error || !data.user) {
     throw createError({ statusCode: 401, statusMessage: 'Invalid session' })
   }
-  if (!isStaffRole(data.user) && !isOwnerUser(data.user)) {
+  return data.user
+}
+
+/** Any signed-in Auth user (including awaiting approval). */
+export async function requireAuthUser(event: H3Event): Promise<User> {
+  return userFromBearer(event)
+}
+
+export async function requireStaffUser(event: H3Event): Promise<User> {
+  const user = await userFromBearer(event)
+  if (!isStaffRole(user) && !isOwnerUser(user)) {
     throw createError({ statusCode: 403, statusMessage: 'Not an organizer' })
   }
-  return data.user
+  return user
 }
 
 export async function requireOwnerUser(event: H3Event): Promise<User> {

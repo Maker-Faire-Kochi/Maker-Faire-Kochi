@@ -282,7 +282,6 @@ async function onSubmit(e: Event) {
 }
 .at-logo img {
   border-radius: 8px;
-  box-shadow: 0 0 0 2px var(--color-cyan);
 }
 .at-title {
   margin: 0 0 0.75rem;
