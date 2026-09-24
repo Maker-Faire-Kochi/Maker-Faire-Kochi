@@ -38,24 +38,35 @@ export default defineEventHandler(async (event) => {
     return { ok: true, status: 'rejected' }
   }
 
-  // Approve: create Auth user (or update existing) with organizer role.
-  const { data: listed } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
-  const existing = listed?.users?.find((u) => u.email?.toLowerCase() === row.email.toLowerCase())
+  // Resolve Auth user: prefer stored user_id, else paginate by email.
+  let authUserId: string | null = row.user_id || null
 
-  if (existing) {
-    const { error: updErr } = await supabase.auth.admin.updateUserById(existing.id, {
-      app_metadata: { ...existing.app_metadata, role: 'organizer' },
+  if (!authUserId) {
+    authUserId = await findAuthUserIdByEmail(supabase, row.email)
+  }
+
+  if (authUserId) {
+    const { data: existing, error: getErr } = await supabase.auth.admin.getUserById(authUserId)
+    if (getErr || !existing.user) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: getErr?.message || 'Auth user not found for this request',
+      })
+    }
+    const { error: updErr } = await supabase.auth.admin.updateUserById(authUserId, {
+      app_metadata: { ...existing.user.app_metadata, role: 'organizer' },
       email_confirm: true,
     })
     if (updErr) throw createError({ statusCode: 500, statusMessage: updErr.message })
   } else {
-    const { error: createErr } = await supabase.auth.admin.createUser({
+    const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email: row.email,
       email_confirm: true,
       user_metadata: { full_name: row.name },
       app_metadata: { role: 'organizer' },
     })
     if (createErr) throw createError({ statusCode: 500, statusMessage: createErr.message })
+    authUserId = created.user?.id || null
   }
 
   const { error: markErr } = await supabase
@@ -64,6 +75,7 @@ export default defineEventHandler(async (event) => {
       status: 'approved',
       reviewed_at: new Date().toISOString(),
       reviewed_by: owner.email,
+      user_id: authUserId,
     })
     .eq('id', id)
 
@@ -71,3 +83,22 @@ export default defineEventHandler(async (event) => {
 
   return { ok: true, status: 'approved', email: row.email }
 })
+
+async function findAuthUserIdByEmail(
+  supabase: ReturnType<typeof useSupabaseService>,
+  email: string,
+): Promise<string | null> {
+  const target = email.toLowerCase()
+  let page = 1
+  const perPage = 200
+  // Hard cap so a runaway loop cannot hang the request.
+  for (let i = 0; i < 25; i++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage })
+    if (error) throw createError({ statusCode: 500, statusMessage: error.message })
+    const hit = data.users.find((u) => u.email?.toLowerCase() === target)
+    if (hit) return hit.id
+    if (!data.users.length || data.users.length < perPage) return null
+    page += 1
+  }
+  return null
+}

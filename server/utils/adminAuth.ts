@@ -8,7 +8,8 @@ export function ownerEmailFromConfig(): string {
 
 export function isStaffRole(user: User | null | undefined): boolean {
   const role = user?.app_metadata?.role
-  return role === 'organizer' || role === 'owner'
+  if (role === 'organizer' || role === 'owner') return true
+  return isOwnerUser(user)
 }
 
 export function isOwnerUser(user: User | null | undefined, ownerEmail?: string): boolean {

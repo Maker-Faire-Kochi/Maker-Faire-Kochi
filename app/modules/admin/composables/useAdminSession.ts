@@ -3,7 +3,9 @@ import { useAdminSupabase } from './useAdminSupabase'
 
 export function isStaffUser(user: User | null | undefined): boolean {
   const role = user?.app_metadata?.role
-  return role === 'organizer' || role === 'owner'
+  if (role === 'organizer' || role === 'owner') return true
+  // Bootstrap: NUXT_ADMIN_OWNER_EMAIL match counts as staff even before role is set.
+  return isOwnerUser(user)
 }
 
 /** @deprecated use isStaffUser */
