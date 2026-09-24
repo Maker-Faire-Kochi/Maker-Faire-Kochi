@@ -128,9 +128,8 @@ async function forceLock() {
     </div>
     <h1>Organizer dashboard</h1>
     <p class="sub">
-      Invite-only accounts. Sign in with a one-time code emailed to you — no Google,
-      no public signup. Only users created in Supabase with
-      <code>role: organizer</code> unlock this panel.
+      Invite-only accounts. Sign in with a one-time code emailed to you — no public
+      signup. Only users the <strong>owner</strong> has Accepted unlock this panel.
     </p>
 
     <div v-if="lockReason" class="lock-banner" role="alert">
@@ -185,6 +184,7 @@ async function forceLock() {
     </form>
 
     <p v-if="message" class="msg" :class="{ err: status === 'error' }">{{ message }}</p>
+    <a href="/admin/request" class="request-link">Need an account? Request access</a>
     <button type="button" class="linkish" @click="forceLock">
       Clear any local session (re-lock)
     </button>
@@ -309,6 +309,19 @@ h1 {
 }
 .msg.err {
   color: #9b1c1c;
+}
+.request-link {
+  display: block;
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-cyan);
+  text-decoration: none;
+}
+.request-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .linkish {
   display: block;

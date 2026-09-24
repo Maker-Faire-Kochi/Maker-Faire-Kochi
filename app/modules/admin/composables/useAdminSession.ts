@@ -1,27 +1,56 @@
 import type { Session, User } from '@supabase/supabase-js'
 import { useAdminSupabase } from './useAdminSupabase'
 
+export function isStaffUser(user: User | null | undefined): boolean {
+  const role = user?.app_metadata?.role
+  return role === 'organizer' || role === 'owner'
+}
+
+/** @deprecated use isStaffUser */
 export function isOrganizerUser(user: User | null | undefined): boolean {
-  return user?.app_metadata?.role === 'organizer'
+  return isStaffUser(user)
+}
+
+export function isOwnerUser(
+  user: User | null | undefined,
+  ownerEmail?: string,
+): boolean {
+  if (!user) return false
+  if (user.app_metadata?.role === 'owner') return true
+  const config = useRuntimeConfig()
+  const owner = (ownerEmail ?? String(config.public.adminOwnerEmail || ''))
+    .trim()
+    .toLowerCase()
+  if (!owner || !user.email) return false
+  return user.email.toLowerCase() === owner
 }
 
 export async function getAdminSession(): Promise<{
   session: Session | null
   organizer: boolean
+  owner: boolean
 }> {
   const supabase = useAdminSupabase()
   const { data, error } = await supabase.auth.getSession()
   if (error) {
-    return { session: null, organizer: false }
+    return { session: null, organizer: false, owner: false }
   }
   const session = data.session
   return {
     session,
-    organizer: isOrganizerUser(session?.user),
+    organizer: isStaffUser(session?.user),
+    owner: isOwnerUser(session?.user),
   }
 }
 
-/** Sign out and clear local session — used when role check fails or user locks out. */
+export async function authHeaders(): Promise<Record<string, string>> {
+  const supabase = useAdminSupabase()
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  if (!token) return {}
+  return { Authorization: `Bearer ${token}` }
+}
+
 export async function lockAdminSession(): Promise<void> {
   const supabase = useAdminSupabase()
   await supabase.auth.signOut()

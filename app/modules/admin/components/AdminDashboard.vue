@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
+import { isOwnerUser, isStaffUser } from '../composables/useAdminSession'
 import {
   responsesToCsv,
   useInterestAnalytics,
@@ -9,8 +10,9 @@ import type { InterestResponseRow } from '~~/shared/interest/types'
 import { PARTICIPATION, STATUSES } from '~~/shared/interest/constants'
 import AdminBarChart from './AdminBarChart.vue'
 import AdminTrendChart from './AdminTrendChart.vue'
+import AdminTeamPanel from './AdminTeamPanel.vue'
 
-const tab = ref<'summary' | 'responses'>('summary')
+const tab = ref<'summary' | 'responses' | 'team'>('summary')
 const rows = ref<InterestResponseRow[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -19,6 +21,7 @@ const filterPart = ref('')
 const search = ref('')
 const openId = ref<string | null>(null)
 const roleOk = ref(false)
+const isOwner = ref(false)
 const email = ref('')
 const copied = ref(false)
 
@@ -63,8 +66,8 @@ async function load() {
       return
     }
     email.value = sessionData.session.user.email || ''
-    const role = sessionData.session.user.app_metadata?.role
-    roleOk.value = role === 'organizer'
+    roleOk.value = isStaffUser(sessionData.session.user)
+    isOwner.value = isOwnerUser(sessionData.session.user)
     if (!roleOk.value) {
       await supabase.auth.signOut()
       await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
@@ -140,7 +143,7 @@ onMounted(() => {
       navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
       return
     }
-    if (session.user.app_metadata?.role !== 'organizer') {
+    if (!isStaffUser(session.user)) {
       void supabase.auth.signOut().then(() =>
         navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } }),
       )
@@ -199,6 +202,17 @@ onMounted(() => {
         >
           Responses
           <span class="badge">{{ summary.total }}</span>
+        </button>
+        <button
+          v-if="isOwner"
+          type="button"
+          role="tab"
+          class="tab"
+          :class="{ active: tab === 'team' }"
+          :aria-selected="tab === 'team'"
+          @click="tab = 'team'"
+        >
+          Team
         </button>
       </div>
 
@@ -376,6 +390,10 @@ onMounted(() => {
           </table>
           <p v-if="!filtered.length" class="empty">No responses match these filters.</p>
         </div>
+      </div>
+
+      <div v-if="isOwner" v-show="tab === 'team'" class="team-wrap">
+        <AdminTeamPanel />
       </div>
     </template>
   </div>

@@ -1,59 +1,43 @@
-# Supabase — Interest form + invite-only admin OTP
+# Supabase — Interest form + owner-approved organizer OTP
 
-## Why not Google?
+## Access model
 
-For a handful of organizers, **invite-only accounts + email OTP** is better than Google OAuth:
+1. **You (owner)** — set `NUXT_ADMIN_OWNER_EMAIL` to your email; create your user in Supabase Auth with App metadata `{ "role": "owner" }` (or `organizer` — email match still grants owner powers).
+2. **Others** — go to `/admin/request`, submit a request. They **cannot** sign in until you Accept.
+3. **You Accept** in Dashboard → **Team** tab → creates their Auth user + `role: organizer`.
+4. They sign in at `/admin/login` with **email OTP** (`shouldCreateUser: false`).
 
-- No Google Cloud client / consent screen to maintain
-- You decide exactly who exists (no “any Gmail can try”)
-- OTP works with any email provider
-- `shouldCreateUser: false` blocks random signups at the Auth API
+Only the owner account can Accept / Reject. Other organizers see Summary + Responses only.
 
 ## Setup
 
-1. Create a project at https://supabase.com  
-2. Copy URL, anon key, service role key into `.env` (see `.env.example`)  
-3. Apply migration (`npx supabase db push` or paste the SQL in `migrations/`)
+1. Create Supabase project; fill `.env`:
 
-## Create organizer accounts (few people only)
-
-In Supabase Dashboard → **Authentication** → **Users**:
-
-1. **Add user** / **Invite user** with their email (no public signup on the site)
-2. Open the user → **App metadata** (not User metadata):
-
-```json
-{ "role": "organizer" }
+```
+NUXT_PUBLIC_SUPABASE_URL=...
+NUXT_PUBLIC_SUPABASE_ANON_KEY=...
+NUXT_SUPABASE_SERVICE_ROLE_KEY=...
+NUXT_ADMIN_OWNER_EMAIL=you@example.com
 ```
 
-3. Authentication → Providers → **Email** → enabled  
-4. Prefer **OTP / magic link**; disable confirm-email friction for invited users if needed  
-5. Turn **Google** (and other social providers) **off** unless you truly need them  
-6. Auth settings: disable “allow new users to sign up” if the toggle exists (or rely on `shouldCreateUser: false` from the app)
+2. Apply migrations (interest_responses + organizer_access_requests).
+3. Auth → Email ON; Google OFF; disable public signups if available.
+4. Create **your** user in Auth → Users; App metadata:
 
-Auth → URL configuration — allow:
+```json
+{ "role": "owner" }
+```
 
-- `http://localhost:3000/admin/callback`
-- `http://localhost:3000/admin`
-- `https://makerfaire.in/admin/callback`
-- `https://makerfaire.in/admin`
+5. Redirect allow-list: `/admin`, `/admin/callback`, `/admin/login`, `/admin/request` (localhost + production).
 
-## How organizers sign in
+## Flows
 
-1. `/admin/login` → enter email → **Send one-time code**  
-2. Enter the 6-digit code from email (or open the magic link → `/admin/callback`)  
-3. Dashboard unlocks only if `app_metadata.role = organizer`
-
-Unknown emails never create accounts (`shouldCreateUser: false`).
+| Who | Path |
+|---|---|
+| Applicant | `/admin/request` → wait |
+| Owner | `/admin` → Team → Accept / Reject |
+| Organizer | `/admin/login` → OTP → dashboard |
 
 ## Auth lock
 
-`/admin` is SPA-only + `admin-auth` middleware:
-
-1. No session → login  
-2. Session without organizer role → signed out + locked  
-3. Organizer + valid OTP session → dashboard  
-
-## Interest form tests
-
-Run `tests/interest_rls.sql` after migrate. Anon cannot read rows; Nitro service role inserts; organizers select via RLS.
+SPA `/admin` + middleware: no session → login; non-staff → locked; staff → dashboard; Team APIs require owner JWT.

@@ -7,7 +7,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
     to.path === '/admin/login' ||
     to.path.startsWith('/admin/login/') ||
     to.path === '/admin/callback' ||
-    to.path.startsWith('/admin/callback/')
+    to.path.startsWith('/admin/callback/') ||
+    to.path === '/admin/request' ||
+    to.path.startsWith('/admin/request/')
   ) {
     return
   }
@@ -38,7 +40,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (!organizer) {
-    // Do not leave a signed-in non-organizer session hanging around the panel.
+    // Do not leave a signed-in non-staff session hanging around the panel.
     await lockAdminSession()
     return navigateTo({
       path: '/admin/login',

@@ -19,9 +19,12 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || '',
+    /** Only this email may approve organizer access requests (also public for client UI). */
+    adminOwnerEmail: process.env.NUXT_ADMIN_OWNER_EMAIL || '',
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      adminOwnerEmail: process.env.NUXT_ADMIN_OWNER_EMAIL || '',
       /**
        * Public origin for social metadata.
        *
