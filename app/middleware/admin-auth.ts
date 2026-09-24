@@ -1,11 +1,14 @@
 /**
- * Locks /admin (dashboard). Login stays public.
+ * Locks /admin (dashboard). Login + OAuth callback stay public.
  * Requires a live Supabase session + app_metadata.role === 'organizer'.
- * Admin routes are SPA-only (see nuxt.config routeRules) so this always runs
- * in the browser before the panel paints.
  */
 export default defineNuxtRouteMiddleware(async (to) => {
-  if (to.path === '/admin/login' || to.path.startsWith('/admin/login/')) {
+  if (
+    to.path === '/admin/login' ||
+    to.path.startsWith('/admin/login/') ||
+    to.path === '/admin/callback' ||
+    to.path.startsWith('/admin/callback/')
+  ) {
     return
   }
 

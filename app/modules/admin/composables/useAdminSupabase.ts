@@ -18,6 +18,7 @@ export function useAdminSupabase(): SupabaseClient {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      flowType: 'pkce',
     },
   })
   return browserClient
