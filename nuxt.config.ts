@@ -9,7 +9,10 @@ export default defineNuxtConfig({
   experimental: { componentIslands: true },
 
   runtimeConfig: {
+    supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || '',
     public: {
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
       /**
        * Public origin for social metadata.
        *

@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "space grotesk",
+        "createdAt": "2026-09-24T07:54:32.060Z",
+        "reason": "pre-existing Maker Faire brand stack in nuxt.config; not introduced by interest form"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/components/MakerAbout.vue"
+        ],
+        "createdAt": "2026-09-24T07:57:13.479Z",
+        "reason": "pre-existing .lead-text red rule; CLAUDE.md design invariant, not introduced by interest form"
+      }
+    ]
+  }
+}
