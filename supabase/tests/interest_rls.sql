@@ -1,11 +1,8 @@
--- Manual / CI checks after migration is applied.
--- Run in SQL editor (service role) or: psql "$DATABASE_URL" -f supabase/tests/interest_rls.sql
---
--- Expect: anon cannot SELECT; service role can INSERT; cleanup deletes the probe row.
+-- Manual checks after all migrations are applied.
+-- Expect: table exists; RLS on; service insert works; staff_select_interest present.
 
 begin;
 
--- 1) Table exists
 do $$
 begin
   if to_regclass('public.interest_responses') is null then
@@ -14,7 +11,6 @@ begin
   raise notice 'PASS: table exists';
 end $$;
 
--- 2) Service-role style insert (this session is typically postgres / service)
 insert into public.interest_responses (
   name, email, location, self_describe, participation, make_possible
 ) values (
@@ -29,19 +25,14 @@ insert into public.interest_responses (
 do $$
 declare
   n int;
+  forced boolean;
 begin
   select count(*) into n from public.interest_responses where email = 'rls-probe@example.com';
   if n <> 1 then
     raise exception 'FAIL: insert did not land';
   end if;
   raise notice 'PASS: insert works';
-end $$;
 
--- 3) RLS is on
-do $$
-declare
-  forced boolean;
-begin
   select relrowsecurity into forced
   from pg_class
   where oid = 'public.interest_responses'::regclass;
@@ -51,13 +42,20 @@ begin
   raise notice 'PASS: RLS enabled';
 end $$;
 
--- 4) Cleanup probe
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'interest_responses'
+      and policyname = 'staff_select_interest'
+  ) then
+    raise exception 'FAIL: run 20260924150000_fix_interest_rls_and_status.sql';
+  end if;
+  raise notice 'PASS: staff_select_interest policy present';
+end $$;
+
 delete from public.interest_responses where email = 'rls-probe@example.com';
 
 raise notice 'PASS: interest_rls smoke checks complete';
 
 commit;
-
--- After linking a project, also verify in the dashboard:
--- * anon key GET /rest/v1/interest_responses → empty or 401/permission denied
--- * set auth.users.app_metadata.role = 'organizer' for your email, magic-link in, SELECT works
