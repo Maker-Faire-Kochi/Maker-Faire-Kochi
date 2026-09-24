@@ -4,12 +4,9 @@ import { Lock } from '@lucide/vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
 import { getAdminSession, lockAdminSession } from '../composables/useAdminSession'
 
-type Step = 'email' | 'otp'
-
-const step = ref<Step>('email')
 const email = ref('')
-const otp = ref('')
-const status = ref<'idle' | 'sending' | 'verifying' | 'error'>('idle')
+const password = ref('')
+const status = ref<'idle' | 'signing-in' | 'error'>('idle')
 const message = ref('')
 const route = useRoute()
 
@@ -22,7 +19,7 @@ const lockReason = computed(() => {
     return 'That account does not have access to this dashboard.'
   }
   if (r === 'signedout') {
-    return 'You were signed out. Sign in again with a one-time code.'
+    return 'You were signed out. Sign in again.'
   }
   return ''
 })
@@ -41,52 +38,27 @@ onMounted(async () => {
   }
 })
 
-async function sendOtp() {
-  status.value = 'sending'
-  message.value = ''
-  try {
-    await $fetch('/api/admin/send-code', {
-      method: 'POST',
-      body: { email: email.value.trim().toLowerCase() },
-    })
-    step.value = 'otp'
-    status.value = 'idle'
-    message.value = 'If this is the admin address, a 6-digit code is on its way.'
-  } catch (e: unknown) {
-    const err = e as { data?: { statusMessage?: string }; statusMessage?: string }
-    status.value = 'error'
-    message.value = err?.data?.statusMessage || err?.statusMessage || 'Could not send code'
-  }
-}
-
-async function verifyOtp() {
-  status.value = 'verifying'
+async function signIn() {
+  status.value = 'signing-in'
   message.value = ''
   try {
     const supabase = useAdminSupabase()
-    const { error } = await supabase.auth.verifyOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.value.trim().toLowerCase(),
-      token: otp.value.trim(),
-      type: 'email',
+      password: password.value,
     })
     if (error) throw error
+
     const verified = await getAdminSession()
     if (!verified.owner) {
       await lockAdminSession()
-      throw new Error('That account does not have access to this dashboard.')
+      throw new Error('Owner access required')
     }
     await navigateTo(nextPath())
-  } catch (e: unknown) {
+  } catch {
     status.value = 'error'
-    message.value = e instanceof Error ? e.message : 'Invalid or expired code'
+    message.value = 'Invalid email or password, or this account is not the configured owner.'
   }
-}
-
-function backToEmail() {
-  step.value = 'email'
-  otp.value = ''
-  message.value = ''
-  status.value = 'idle'
 }
 
 async function forceLock() {
@@ -95,8 +67,7 @@ async function forceLock() {
   } catch {
     /* ignore */
   }
-  step.value = 'email'
-  otp.value = ''
+  password.value = ''
   message.value = 'Session cleared.'
   status.value = 'idle'
 }
@@ -110,15 +81,14 @@ async function forceLock() {
     </div>
     <h1>Admin sign in</h1>
     <p class="sub">
-      This dashboard belongs to one account. Enter its email and we will send a
-      one-time code.
+      This dashboard belongs to one Supabase Auth account.
     </p>
 
     <div v-if="lockReason" class="lock-banner" role="alert">
       {{ lockReason }}
     </div>
 
-    <form v-if="step === 'email'" @submit.prevent="sendOtp">
+    <form @submit.prevent="signIn">
       <label class="lbl" for="admin-email">Email</label>
       <input
         id="admin-email"
@@ -129,39 +99,17 @@ async function forceLock() {
         autocomplete="email"
         placeholder="you@example.com"
       />
-      <button class="btn" type="submit" :disabled="status === 'sending'">
-        {{ status === 'sending' ? 'Sending code…' : 'Send code' }}
-      </button>
-    </form>
-
-    <form v-else @submit.prevent="verifyOtp">
-      <p class="sent-to">
-        Code sent to <strong>{{ email }}</strong>
-        <button type="button" class="change" @click="backToEmail">Change</button>
-      </p>
-      <label class="lbl" for="admin-otp">One-time code</label>
+      <label class="lbl" for="admin-password">Password</label>
       <input
-        id="admin-otp"
-        v-model="otp"
-        class="inp otp"
-        type="text"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        autocomplete="one-time-code"
+        id="admin-password"
+        v-model="password"
+        class="inp"
+        type="password"
+        autocomplete="current-password"
         required
-        maxlength="8"
-        placeholder="123456"
       />
-      <button class="btn" type="submit" :disabled="status === 'verifying' || otp.trim().length < 6">
-        {{ status === 'verifying' ? 'Signing in…' : 'Verify code' }}
-      </button>
-      <button
-        type="button"
-        class="btn secondary"
-        :disabled="status === 'sending'"
-        @click="sendOtp"
-      >
-        Resend code
+      <button class="btn" type="submit" :disabled="status === 'signing-in'">
+        {{ status === 'signing-in' ? 'Signing in…' : 'Sign in' }}
       </button>
     </form>
 
@@ -218,22 +166,6 @@ h1 {
   color: var(--color-red-cta);
   line-height: 1.45;
 }
-.sent-to {
-  margin: 0 0 1rem;
-  font-size: 0.875rem;
-  color: var(--color-muted);
-}
-.change {
-  margin-left: 0.5rem;
-  border: none;
-  background: none;
-  color: var(--color-ink);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
 .lbl {
   display: block;
   font-weight: 600;
@@ -250,13 +182,6 @@ h1 {
   font: inherit;
   margin-bottom: 1rem;
 }
-.inp.otp {
-  letter-spacing: 0.35em;
-  font-size: 1.25rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
 .btn {
   width: 100%;
   min-height: 44px;
@@ -266,12 +191,6 @@ h1 {
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-}
-.btn.secondary {
-  margin-top: 0.5rem;
-  background: var(--color-white);
-  color: var(--color-ink);
-  border: 1px solid var(--separator);
 }
 .btn:disabled {
   opacity: 0.65;

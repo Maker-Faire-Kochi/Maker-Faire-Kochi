@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAdminSupabase } from '../composables/useAdminSupabase'
-import { getAdminSession, isOwnerUser } from '../composables/useAdminSession'
+import { getAdminSession, hasOwnerAccess } from '../composables/useAdminSession'
 import {
   responsesToCsv,
   useInterestAnalytics,
@@ -19,7 +19,7 @@ const filterStatus = ref('')
 const filterPart = ref('')
 const search = ref('')
 const openId = ref<string | null>(null)
-const roleOk = ref(false)
+const ownerOk = ref(false)
 const email = ref('')
 const copied = ref(false)
 
@@ -64,8 +64,8 @@ async function load() {
       return
     }
     email.value = session.user.email || ''
-    roleOk.value = owner
-    if (!roleOk.value) {
+    ownerOk.value = owner
+    if (!ownerOk.value) {
       await supabase.auth.signOut()
       await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
       return
@@ -154,11 +154,13 @@ onMounted(() => {
       navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
       return
     }
-    if (!isOwnerUser(session.user)) {
-      void supabase.auth.signOut().then(() =>
-        navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } }),
-      )
-    }
+    void hasOwnerAccess(session.access_token).then((owner) => {
+      if (!owner) {
+        return supabase.auth.signOut().then(() =>
+          navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } }),
+        )
+      }
+    })
   })
   onUnmounted(() => {
     sub.subscription.unsubscribe()
@@ -186,12 +188,12 @@ onMounted(() => {
       </div>
     </header>
 
-    <p v-if="email && roleOk" class="signed-in">Signed in as {{ email }}</p>
+    <p v-if="email && ownerOk" class="signed-in">Signed in as {{ email }}</p>
 
     <p v-if="loading" class="state">Loading responses…</p>
     <p v-else-if="error" class="state err">{{ error }}</p>
 
-    <template v-else-if="roleOk">
+    <template v-else-if="ownerOk">
       <div class="tabs" role="tablist" aria-label="Admin views">
         <button
           type="button"

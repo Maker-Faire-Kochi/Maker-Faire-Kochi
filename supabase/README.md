@@ -5,13 +5,12 @@
 - `/interestform` is public. Submissions go through `POST /api/interest`, which validates
   and inserts with the service role. Browsers never write to the table directly.
 - `/admin` is for **one account**: the email in `NUXT_ADMIN_OWNER_EMAIL`.
-  1. Enter that email at `/admin/login`.
-  2. `POST /api/admin/send-code` checks it against the env var. Any other address gets the
-     same "code is on its way" reply and no email, so the endpoint does not reveal the owner.
-  3. For the owner it creates the Auth user if missing, sets `app_metadata.role = owner`,
-     binds that Auth user ID as the sole database owner, then emails a 6-digit code.
-  4. The code is verified in the browser; the session's JWT carries `role: owner`, which is
-     checked by the server. RLS separately checks the bound Auth user ID.
+  1. Create that one email/password user in **Supabase Authentication → Users**.
+  2. Sign in at `/admin/login` with the same email and password.
+  3. Supabase verifies the password; the server verifies the authenticated email against
+     `NUXT_ADMIN_OWNER_EMAIL`.
+  4. The first successful login binds that Auth user ID as the sole database owner. RLS checks
+     the bound UUID, so another Auth account cannot read responses.
 - Nobody can sign up. There is no approval queue and no team.
 
 ## Setup
@@ -26,24 +25,21 @@ NUXT_ADMIN_OWNER_EMAIL=you@example.com
 1. Run every file in `supabase/migrations/` in order (SQL editor or `npx supabase db push`).
 2. **Authentication → Sign In / Providers**
    - Email: ON. Google and everything else: OFF.
-   - **Allow new users to sign up: OFF.** The server creates the owner with the admin API,
-     which works with sign-ups disabled.
-3. **Authentication → Email Templates → Magic Link**: make the body show the code, e.g.
-
-   ```html
-   <h2>Maker Faire Kochi admin</h2>
-   <p>Your code: <strong>{{ .Token }}</strong></p>
-   ```
-
-   There is no link-based sign-in; the default template only has a link.
-4. No redirect URLs are needed.
-5. Optional check: paste `supabase/tests/interest_rls.sql` into the SQL editor. It rolls back.
+   - **Allow new users to sign up: OFF.**
+3. **Authentication → Users → Add user → Create new user**
+   - Enter the same email as `NUXT_ADMIN_OWNER_EMAIL`.
+   - Set the password there and enable **Auto Confirm User**.
+   - Do **not** insert a password into a Postgres table or put it in `.env`. Supabase Auth stores
+     only its managed password hash.
+4. Sign in once at `/admin/login`; this creates the one-user RLS binding.
+5. No redirect URLs or email templates are needed.
+6. Optional check: paste `supabase/tests/interest_rls.sql` into the SQL editor. It rolls back.
 
 ## Changing the owner
 
-Change `NUXT_ADMIN_OWNER_EMAIL`, redeploy, then sign in once as the new owner. That login
-atomically moves the database owner binding, so the previous user's existing token loses
-data access immediately, and removes the old account's owner role.
+Create the replacement Auth user, change `NUXT_ADMIN_OWNER_EMAIL`, redeploy, then sign in once
+as the new owner. The server rejects the old email as soon as the env changes; the new login
+moves the RLS binding so the previous user's existing token also loses direct database access.
 
 ## Migrations
 

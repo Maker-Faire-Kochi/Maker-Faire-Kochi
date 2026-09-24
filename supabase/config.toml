@@ -22,5 +22,3 @@ enable_signup = false
 
 [auth.email]
 enable_signup = false
-otp_length = 6
-otp_expiry = 600

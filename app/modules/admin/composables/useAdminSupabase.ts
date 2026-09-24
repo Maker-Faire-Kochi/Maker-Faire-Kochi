@@ -17,7 +17,7 @@ export function useAdminSupabase(): SupabaseClient {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      // Sign-in is a typed 6-digit code only; there is no link to pick up.
+      // Password sign-in has no callback URL to detect.
       detectSessionInUrl: false,
     },
   })

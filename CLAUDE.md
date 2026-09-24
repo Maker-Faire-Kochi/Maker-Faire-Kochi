@@ -850,19 +850,17 @@ plausible-looking invention.
 `supabase/README.md`. Validation smoke test: `npm run test:interest`.
 
 - **`/admin` is ONE account, on purpose.** There was an organizer sign-up + owner-approval flow;
-  it was deleted on the owner's instruction. `POST /api/admin/send-code` emails a code ONLY to
-  `NUXT_ADMIN_OWNER_EMAIL`, first creating that Auth user and setting `app_metadata.role =
-  owner`. It also binds that user's UUID in `admin_owner`; RLS checks the UUID, not the role.
-  Every address gets the same delayed `{ ok: true }`, including on provider failure, so response
-  status and ordinary timing do not reveal the owner. Supabase sign-ups stay OFF.
+  it was deleted on the owner's instruction. The owner is created manually in Supabase Auth with
+  email + password; public sign-ups stay OFF. The app never stores or receives the password
+  outside `supabase.auth.signInWithPassword`.
 - **Never put the owner email in `runtimeConfig.public`.** Public config is serialized into the
   HTML of every page, homepage included. It was there once; verify with
   `curl -s localhost:3000/ | grep -c <owner email>` → 0.
 - **One owner means one UUID, not everyone with a role string.** `GET /api/admin/session`
-  validates both role and email against server-only config. RLS calls
+  validates the authenticated email against server-only config, then binds that Auth UUID. RLS calls
   `private.is_admin_owner()`, which compares `auth.uid()` to the singleton `admin_owner` row.
-  On owner rotation the binding moves first, immediately invalidating the old live JWT, then
-  the old account's role is cleared.
+  On owner rotation, the server rejects the old email immediately; the new owner's first login
+  moves the binding and invalidates the old live JWT's direct database access.
 - **Updates may change `status` and nothing else** — enforced by a trigger comparing
   `to_jsonb(new) - 'status'` with `old`, so new columns are covered automatically.
 - **Text caps live in TWO places that must agree:** `MAX_LEN` in `shared/interest/validate.ts`
@@ -880,7 +878,7 @@ plausible-looking invention.
   per instance, so serverless cold starts reset them; good enough for a v1 interest form.
 - **Request limits are STREAMING limits.** `Content-Length` can be omitted on a chunked request,
   so checking that header alone is not a body cap. `readJsonBodyLimited` counts incoming bytes
-  and cancels the reader at the ceiling (64 KB for the form, 1 KB for admin email).
+  and cancels the form reader at the 64 KB ceiling.
 
 ## Still open
 
