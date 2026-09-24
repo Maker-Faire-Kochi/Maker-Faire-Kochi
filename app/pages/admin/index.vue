@@ -3,7 +3,7 @@ import AdminDashboard from '~/modules/admin/components/AdminDashboard.vue'
 
 definePageMeta({ layout: 'admin' })
 
-useSeoMeta({ title: 'Interest inbox — Maker Faire Kochi' })
+useSeoMeta({ title: 'Interest dashboard — Maker Faire Kochi' })
 </script>
 
 <template>

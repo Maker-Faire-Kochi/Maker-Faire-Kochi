@@ -28,8 +28,11 @@ async function sendLink() {
 
 <template>
   <div class="login-card">
-    <h1>Organizer login</h1>
-    <p class="sub">Magic link — only allowlisted organizer emails get dashboard access.</p>
+    <h1>Organizer dashboard</h1>
+    <p class="sub">
+      Magic link access to interest-form analytics and responses (Google Forms–style summary).
+      Only emails with <code>app_metadata.role = organizer</code> can load data.
+    </p>
     <form @submit.prevent="sendLink">
       <label class="lbl" for="admin-email">Email</label>
       <input
