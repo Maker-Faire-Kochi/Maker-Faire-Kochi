@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * OAuth / magic-link return URL. Exchanges the session from the URL hash or
- * code, then unlocks /admin only for organizers.
+ * Magic-link return URL (email OTP link click).
+ * Code entry happens on /admin/login; this path only finishes link-based unlock.
  */
 definePageMeta({
   layout: 'admin',
@@ -11,7 +11,7 @@ definePageMeta({
 useSeoMeta({ title: 'Signing in… — Maker Faire Kochi' })
 
 const status = ref<'working' | 'ok' | 'fail'>('working')
-const detail = ref('Finishing Google / email sign-in…')
+const detail = ref('Finishing sign-in…')
 
 onMounted(async () => {
   try {
@@ -23,22 +23,28 @@ onMounted(async () => {
     )
     const supabase = useAdminSupabase()
 
-    // PKCE: ?code=…  |  implicit/magic: tokens in hash (detectSessionInUrl)
     const url = new URL(window.location.href)
     const code = url.searchParams.get('code')
+    const token_hash = url.searchParams.get('token_hash')
+    const type = url.searchParams.get('type')
+
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       if (error) throw error
+    } else if (token_hash && type) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type: type as 'email' | 'magiclink',
+      })
+      if (error) throw error
     }
 
-    // Give detectSessionInUrl a tick if hash tokens are present
     await new Promise((r) => setTimeout(r, 50))
     const { data, error } = await supabase.auth.getSession()
     if (error) throw error
 
     if (!data.session) {
       status.value = 'fail'
-      detail.value = 'No session found. Try signing in again.'
       await navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
       return
     }
@@ -46,7 +52,6 @@ onMounted(async () => {
     if (!isOrganizerUser(data.session.user)) {
       await lockAdminSession()
       status.value = 'fail'
-      detail.value = 'Signed in, but not an organizer.'
       await navigateTo({ path: '/admin/login', query: { reason: 'forbidden' } })
       return
     }
@@ -57,10 +62,7 @@ onMounted(async () => {
   } catch (e: unknown) {
     status.value = 'fail'
     detail.value = e instanceof Error ? e.message : 'Sign-in failed'
-    await navigateTo({
-      path: '/admin/login',
-      query: { reason: 'signedout' },
-    })
+    await navigateTo({ path: '/admin/login', query: { reason: 'signedout' } })
   }
 })
 </script>

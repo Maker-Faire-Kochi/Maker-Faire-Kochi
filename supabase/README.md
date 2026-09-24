@@ -1,80 +1,59 @@
-# Supabase — Interest form + admin auth (Google / Gmail)
+# Supabase — Interest form + invite-only admin OTP
+
+## Why not Google?
+
+For a handful of organizers, **invite-only accounts + email OTP** is better than Google OAuth:
+
+- No Google Cloud client / consent screen to maintain
+- You decide exactly who exists (no “any Gmail can try”)
+- OTP works with any email provider
+- `shouldCreateUser: false` blocks random signups at the Auth API
 
 ## Setup
 
-1. Create a project at https://supabase.com
-2. Copy URL, anon key, service role key into `.env` (see `.env.example`)
-3. Apply migration:
+1. Create a project at https://supabase.com  
+2. Copy URL, anon key, service role key into `.env` (see `.env.example`)  
+3. Apply migration (`npx supabase db push` or paste the SQL in `migrations/`)
 
-```bash
-npx supabase login
-npx supabase link --project-ref <your-ref>
-npx supabase db push
-```
+## Create organizer accounts (few people only)
 
-Or paste `migrations/20260924120000_interest_responses.sql` into the SQL editor.
+In Supabase Dashboard → **Authentication** → **Users**:
 
-## Auth: Google (Gmail) + magic link
-
-Admin login is at `/admin/login`. Primary path is **Continue with Google**.
-
-### 1. Enable Google provider in Supabase
-
-Authentication → Providers → **Google** → Enable.
-
-You need a Google Cloud OAuth client:
-
-1. [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials
-2. Create **OAuth client ID** (Web application)
-3. Authorized JavaScript origins:
-   - `http://localhost:3000`
-   - `https://makerfaire.in`
-   - `https://YOUR_PROJECT.supabase.co`
-4. Authorized redirect URIs (critical — use the Supabase callback):
-   - `https://YOUR_PROJECT.supabase.co/auth/v1/callback`
-5. Copy Client ID + Client Secret into Supabase Google provider settings → Save
-
-### 2. Redirect allow-list in Supabase
-
-Authentication → URL configuration:
-
-- Site URL: `https://makerfaire.in` (or `http://localhost:3000` in local)
-- Redirect URLs (add all):
-  - `http://localhost:3000/admin/callback`
-  - `http://localhost:3000/admin`
-  - `https://makerfaire.in/admin/callback`
-  - `https://makerfaire.in/admin`
-
-### 3. Organizer role (required)
-
-After first Google sign-in, the user appears under Authentication → Users.
-Open the user → **App metadata** (not User metadata):
+1. **Add user** / **Invite user** with their email (no public signup on the site)
+2. Open the user → **App metadata** (not User metadata):
 
 ```json
 { "role": "organizer" }
 ```
 
-Without this, Google sign-in succeeds but the dashboard **stays locked**.
+3. Authentication → Providers → **Email** → enabled  
+4. Prefer **OTP / magic link**; disable confirm-email friction for invited users if needed  
+5. Turn **Google** (and other social providers) **off** unless you truly need them  
+6. Auth settings: disable “allow new users to sign up” if the toggle exists (or rely on `shouldCreateUser: false` from the app)
 
-Enable **Email** provider too if you want the magic-link fallback (works with Gmail addresses).
+Auth → URL configuration — allow:
+
+- `http://localhost:3000/admin/callback`
+- `http://localhost:3000/admin`
+- `https://makerfaire.in/admin/callback`
+- `https://makerfaire.in/admin`
+
+## How organizers sign in
+
+1. `/admin/login` → enter email → **Send one-time code**  
+2. Enter the 6-digit code from email (or open the magic link → `/admin/callback`)  
+3. Dashboard unlocks only if `app_metadata.role = organizer`
+
+Unknown emails never create accounts (`shouldCreateUser: false`).
 
 ## Auth lock
 
-`/admin` is SPA-only and guarded by `admin-auth` middleware:
+`/admin` is SPA-only + `admin-auth` middleware:
 
-1. No session → `/admin/login`
-2. Session without `app_metadata.role = "organizer"` → signed out + locked
-3. Organizer session → dashboard unlocks
+1. No session → login  
+2. Session without organizer role → signed out + locked  
+3. Organizer + valid OTP session → dashboard  
 
-OAuth / magic-link returns through `/admin/callback`, which exchanges the PKCE code and enforces the organizer check.
+## Interest form tests
 
-## Tests
-
-After migrate, run `tests/interest_rls.sql` in the SQL editor.
-
-Then:
-
-1. Anon `GET /rest/v1/interest_responses` → no rows (RLS)
-2. `POST /api/interest` from the Nuxt app → inserts (service role)
-3. Google sign-in as organizer → `/admin` Summary + Responses load
-4. Non-organizer Google account → locked with `reason=forbidden`
+Run `tests/interest_rls.sql` after migrate. Anon cannot read rows; Nitro service role inserts; organizers select via RLS.
