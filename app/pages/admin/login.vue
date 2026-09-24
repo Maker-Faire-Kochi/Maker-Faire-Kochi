@@ -6,7 +6,7 @@ definePageMeta({
   middleware: ['admin-guest'],
 })
 
-useSeoMeta({ title: 'Organizer login — Maker Faire Kochi' })
+useSeoMeta({ title: 'Admin login — Maker Faire Kochi' })
 </script>
 
 <template>

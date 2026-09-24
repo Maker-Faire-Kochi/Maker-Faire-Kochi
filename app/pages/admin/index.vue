@@ -13,7 +13,7 @@ useSeoMeta({ title: 'Interest dashboard — Maker Faire Kochi' })
   <ClientOnly>
     <AdminDashboard />
     <template #fallback>
-      <p class="boot">Checking organizer lock…</p>
+      <p class="boot">Checking admin lock…</p>
     </template>
   </ClientOnly>
 </template>
