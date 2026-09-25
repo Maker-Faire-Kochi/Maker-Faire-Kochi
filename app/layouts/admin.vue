@@ -9,7 +9,7 @@ useHead({
     <NuxtRouteAnnouncer />
     <header class="admin-top">
       <a href="/" class="admin-brand">
-        <span class="mark" aria-hidden="true" />
+        <img class="mark" src="/img/logo/apple-touch-icon.png" alt="" width="32" height="32" />
         Maker Faire Kochi
       </a>
       <nav class="admin-nav" aria-label="Admin">
@@ -51,10 +51,9 @@ useHead({
   color: var(--color-ink);
 }
 .mark {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 2px;
-  background: linear-gradient(135deg, var(--color-cyan) 50%, var(--color-red) 50%);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
 }
 .admin-nav {
   display: flex;
