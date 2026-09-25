@@ -9,16 +9,13 @@ import { Hammer, Users, Sparkles } from '@lucide/vue'
  * single column without the card chrome fighting it.
  */
 const invitations = [
-  /**
-   * No `href`/`cta` on this one: it pointed at a forms.gle link that does not
-   * exist. `v-if="item.cta"` in the template makes the link optional rather
-   * than rendering an empty one -- restore both keys when there is a real
-   * destination.
-   */
   {
     icon: Hammer,
     title: 'Exhibit your project',
     body: 'Whether you built a giant metal dragon, a smart IoT farm system, or beautiful upcycled art — we want you to show it.',
+    href: '/interestform',
+    cta: 'Get involved',
+    external: false,
   },
   {
     icon: Users,

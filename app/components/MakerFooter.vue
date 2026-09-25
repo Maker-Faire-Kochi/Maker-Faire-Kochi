@@ -80,6 +80,7 @@ import { CONTACT_EMAIL, INSTAGRAM_URL } from '~/composables/useCountdown'
             <li><a href="#about" class="footer-link">About the Event</a></li>
             <li><a href="#categories" class="footer-link">Exhibition Themes</a></li>
             <li><a href="#countdown" class="footer-link">Countdown status</a></li>
+            <li><a href="/interestform" class="footer-link">Get Involved</a></li>
           </ul>
         </div>
 

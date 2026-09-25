@@ -8,8 +8,25 @@ export default defineNuxtConfig({
   // sent once in the SSR HTML and never again in the client bundle.
   experimental: { componentIslands: true },
 
+  /**
+   * Admin is owner-only. SPA mode so the lock middleware always runs in
+   * the browser before any dashboard HTML is painted (no SSR leak of shell).
+   */
+  routeRules: {
+    '/admin': { ssr: false },
+    '/admin/**': { ssr: false },
+  },
+
   runtimeConfig: {
+    supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || '',
+    /**
+     * The one account allowed into /admin. Server-only on purpose: anything
+     * under `public` is serialized into the HTML of every page, homepage included.
+     */
+    adminOwnerEmail: process.env.NUXT_ADMIN_OWNER_EMAIL || '',
     public: {
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
       /**
        * Public origin for social metadata.
        *

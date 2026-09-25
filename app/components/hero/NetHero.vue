@@ -180,16 +180,10 @@ onUnmounted(() => {
         </span>
       </p>
 
-      <!-- The "Join as Maker" CTA was REMOVED, not restyled. It pointed at a
-           forms.gle link that does not exist, and a dead primary action is
-           worse than no primary action. Restore it here (and in MakerHeader,
-           MakerAbout, MakerCategories, MakerFooter) once there is a real
-           destination.
-
-           "Learn More" keeps the dark-ground neutral rather than being promoted
-           to the red primary: it scrolls the page, and painting navigation as
-           the page's one conversion action would oversell it. -->
+      <!-- Interest form (not registration). Primary CTA stays the dark-ground
+           neutral "Learn More"; Get Involved is the conversion path. -->
       <div class="net-hero-actions">
+        <a href="/interestform" class="btn-maker btn-maker-primary">Get Involved</a>
         <a href="#about" class="btn-maker btn-maker-on-dark">Learn More</a>
       </div>
     </div>

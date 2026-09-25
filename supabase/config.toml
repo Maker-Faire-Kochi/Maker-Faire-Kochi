@@ -1,0 +1,24 @@
+# Minimal Supabase CLI config for Maker Faire Kochi interest form.
+# Link a project with: npx supabase link --project-ref <ref>
+# Apply migrations with: npx supabase db push
+
+project_id = "maker-faire-kochi"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+# One admin account, created by the server. Nobody signs up.
+[auth]
+enable_signup = false
+
+[auth.email]
+enable_signup = false
