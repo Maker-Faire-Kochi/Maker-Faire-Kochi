@@ -233,10 +233,57 @@ onUnmounted(() => {
      320px is also the reflow width a sighted low-vision user lands on at 200%
      zoom — clipping penalises exactly the people who zoomed, and aria-label only
      helps assistive tech, not them. A lone "Shapes" glyph for "Domains" is not
-     guessable. The rail scrolls horizontally, so nothing has to be hidden. */
+     guessable.
+
+     A hidden horizontal scrollbar is the same failure: four labelled pills do
+     not fit a 320–390px rail (measured overflow 70px at 390), and
+     scrollbar-width: none gives no hint that "Get Involved" is off to the
+     right. Stack icon over label in equal columns so every item is on screen.
+     "Get Involved" wraps on the space; do not nowrap it back into a scroll. */
+  :global(:root) {
+    /* Measured 72px at 320 and 390. Hero, footer and scroll-padding read this
+       token, so a taller phone rail stays clear of the buttons. */
+    --rail-h: 72px;
+  }
+
+  .rail-wrap {
+    bottom: calc(0.625rem + env(safe-area-inset-bottom));
+  }
+
+  .rail {
+    width: calc(100vw - 1rem);
+    max-width: none;
+    gap: 0.125rem;
+    padding: 0.25rem;
+    overflow: visible;
+    justify-content: stretch;
+  }
+
   .pill {
-    padding: 0 0.75rem;
-    font-size: 0.85rem;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    min-height: 56px;
+    padding: 0.3rem 0.2rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .pill-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .pill-cta {
+    /* Wider than the word columns so "Get Involved" stays one line inside the
+       pill ends. Equal shares at 320px left the label 3px from each cap. */
+    flex-grow: 1.45;
+    padding-inline: 0.45rem;
+    line-height: 1.15;
   }
 }
 

@@ -340,19 +340,22 @@ onUnmounted(() => {
   margin-top: var(--sp-4);
 }
 
-/* Short viewports — a laptop at 200% zoom (1440x900 becomes 720x450), or a phone
-   in landscape. The hero is min-height:100svh, so everything inside it has to fit
-   in whatever height that is, and the date band is taller than the caption it
-   replaced. Tighten the stack rather than let the buttons run under the fixed
-   nav rail. */
-@media (max-height: 560px) {
+/* Short viewports. The hero is min-height:100svh, so the stack has to clear
+   the fixed rail inside that height.
+   560px missed the phones that actually need it: iPhone SE is 667 tall, the
+   original SE is 568, and a common 16:9 Android is 640. Measured with the
+   phone rail at 72px, Learn More crossed into the bar on all three. Modern
+   19.5:9 iPhones (844 and up) stay on the regular stack.
+   720x450 is still the laptop-at-200% case and is covered by the next query. */
+@media (max-height: 720px) {
   .net-hero {
-    padding-top: 1.5rem;
+    padding-top: 1.25rem;
+    /* Grow instead of clipping. A centered stack that is a few pixels too
+       tall is painted under the rail and overflow:hidden makes it untappable. */
+    height: auto;
+    justify-content: center;
   }
 
-  /* Compress the graduated spacing rather than the content. The stack has to
-     fit inside 100svh at 720x450 (a laptop at 200% zoom) without the buttons
-     sliding under the fixed rail. */
   .net-hero-title {
     margin-top: var(--sp-1);
   }
@@ -370,8 +373,44 @@ onUnmounted(() => {
     margin-top: var(--sp-2);
   }
 
+  .net-hero-actions :deep(.btn-maker) {
+    padding: 0.55rem 1.25rem;
+  }
+
   .net-hero-logo {
-    width: clamp(130px, 14vw, 170px);
+    width: clamp(112px, 28vw, 150px);
+  }
+}
+
+/* Phone landscape, and a laptop at 200% (about 720x450). Display type at
+   these heights takes the buttons with it under the rail. */
+@media (max-height: 480px) {
+  .net-hero {
+    padding-top: 0.75rem;
+  }
+
+  .net-hero-logo {
+    width: clamp(88px, 16vw, 120px);
+  }
+
+  .net-hero-title {
+    font-size: clamp(1.35rem, 3.4vw, 2rem);
+    margin-top: 0.35rem;
+  }
+
+  .net-hero-subtitle {
+    margin-top: 0.35rem;
+    font-size: 0.95rem;
+  }
+
+  .net-hero-when {
+    margin-top: 0.5rem;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .net-hero-actions {
+    margin-top: 0.4rem;
   }
 }
 
