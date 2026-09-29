@@ -79,6 +79,7 @@ async function forceLock() {
       <Lock :size="14" :stroke-width="2.5" aria-hidden="true" />
       Locked
     </div>
+    <p class="sheet">Sht A1 &middot; Access</p>
     <h1>Admin sign in</h1>
     <p class="sub">
       This dashboard belongs to one Supabase Auth account.
@@ -108,7 +109,7 @@ async function forceLock() {
         autocomplete="current-password"
         required
       />
-      <button class="btn" type="submit" :disabled="status === 'signing-in'">
+      <button class="key key-red btn" type="submit" :disabled="status === 'signing-in'">
         {{ status === 'signing-in' ? 'Signing in…' : 'Sign in' }}
       </button>
     </form>
@@ -122,99 +123,104 @@ async function forceLock() {
 
 <style scoped>
 .login-card {
-  max-width: 24rem;
-  margin: 3rem auto;
+  position: relative;
+  max-width: 26rem;
+  margin: 4rem auto;
+  padding: 2rem 1.75rem 1.5rem;
   background: #fff;
-  border: 1px solid var(--separator);
-  border-radius: 12px;
-  padding: 1.75rem;
-  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.05);
+  border: 1px solid var(--pn-ink);
+  box-shadow: 4px 4px 0 rgba(10, 10, 10, 0.1);
+  font-family: var(--font-readout);
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-red-cta) 0 33%, var(--color-cyan) 33% 66%, var(--pn-ink) 66%);
 }
 .lock-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  padding: 0.25rem 0.55rem;
+  margin-bottom: 1rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-red-cta);
-  background: rgba(196, 18, 26, 0.08);
-  border: 1px solid rgba(196, 18, 26, 0.25);
-  border-radius: 999px;
-  padding: 0.25rem 0.6rem;
-  margin-bottom: 0.85rem;
+  color: #fff;
+  background: var(--pn-ink);
+}
+.sheet {
+  margin: 0 0 0.4rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
 }
 h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.35rem;
-  font-weight: 700;
+  margin: 0 0 0.6rem;
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: 2.4rem;
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--pn-ink);
 }
 .sub {
-  margin: 0 0 1.25rem;
-  color: var(--color-muted);
-  font-size: 0.875rem;
-  line-height: 1.45;
+  margin: 0 0 1.5rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--pn-label);
 }
 .lock-banner {
-  background: rgba(196, 18, 26, 0.08);
-  border: 1px solid rgba(196, 18, 26, 0.28);
-  border-radius: 8px;
+  margin-bottom: 1.25rem;
   padding: 0.75rem 0.85rem;
-  margin-bottom: 1rem;
-  font-size: 0.8125rem;
-  color: var(--color-red-cta);
+  border: 1px solid var(--color-red-cta);
+  box-shadow: inset 3px 0 0 var(--color-red-cta);
+  font-size: 0.8rem;
   line-height: 1.45;
+  color: var(--color-red-cta);
 }
 .lbl {
   display: block;
-  font-weight: 600;
-  font-size: 0.875rem;
   margin-bottom: 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
 }
 .inp {
   width: 100%;
   box-sizing: border-box;
   min-height: 44px;
-  border: 1px solid #cfd6e0;
-  border-radius: 8px;
+  margin-bottom: 1.1rem;
   padding: 0.65rem 0.85rem;
+  border: 1px solid var(--pn-ink);
+  border-radius: 0;
   font: inherit;
-  margin-bottom: 1rem;
+  font-size: 1rem;
+  background: #fff;
 }
-.btn {
-  width: 100%;
-  min-height: 44px;
-  border: none;
-  border-radius: 8px;
-  background: var(--color-red-cta);
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn:disabled {
-  opacity: 0.65;
-  cursor: wait;
-}
-.msg {
-  margin: 1rem 0 0;
-  font-size: 0.875rem;
-  color: var(--color-muted);
-}
-.msg.err {
-  color: #9b1c1c;
-}
+.inp:focus-visible { outline: 2px solid var(--color-cyan); outline-offset: 2px; }
+.btn { width: 100%; margin-top: 0.25rem; }
+.btn:disabled { opacity: 0.65; cursor: wait; }
+.msg { margin: 1rem 0 0; font-size: 0.8rem; color: var(--pn-label); }
+.msg.err { color: var(--color-red-cta); }
 .linkish {
   display: block;
-  margin-top: 1.25rem;
   width: 100%;
+  margin-top: 1.25rem;
   border: none;
   background: transparent;
-  color: var(--color-muted);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--pn-label);
   text-decoration: underline;
-  cursor: pointer;
   text-underline-offset: 2px;
+  cursor: pointer;
 }
 </style>

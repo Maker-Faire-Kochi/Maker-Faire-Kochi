@@ -75,11 +75,12 @@
   --text-title-1-lh:  1.1;
   --text-title-2:     clamp(1.35rem, 2.2vw, 1.5rem);
   --text-title-2-lh:  1.2;
-  --text-headline:    1.15rem;
+  --text-headline:    1.25rem;
   --text-headline-lh: 1.3;
-  --text-body:        1.1rem;
+  /* 18px body, 16px captions. Below that, older readers lose the sentence. */
+  --text-body:        1.125rem;
   --text-body-lh:     1.6;
-  --text-caption:     0.85rem;
+  --text-caption:     1rem;
   --text-caption-lh:  1.4;
 
 
@@ -87,11 +88,9 @@
   
   --shadow-soft:    0 1px 2px rgba(41,41,41,.06), 0 4px 12px rgba(41,41,41,.10);
   --shadow-soft-lg: 0 2px 4px rgba(41,41,41,.06), 0 12px 32px rgba(41,41,41,.14);
-  /* The rail's ACTUAL footprint: a 44px pill + 2 x 6px padding + 2 x 1px
-     border = 58px. It read 56px, so every clearance built on it (root scroll
-     padding, hero bottom padding, footer bottom padding) was 2px short. It is
-     a min-height on .rail, so the rail itself was never clipped -- only the
-     things spacing themselves away from it. */
+  /* The rail's footprint, and every clearance is built on it (root scroll
+     padding, hero bottom padding, footer bottom padding). Keys grew with the
+     reading size: about 55px of label plus a 2px top rule. */
   --rail-h: 58px;
 
   /* ── HERO SCENE DARKNESS — tune it here, nowhere else ─────────────────────
@@ -139,6 +138,248 @@
   --ease-out: cubic-bezier(.22,1,.36,1);
   --dur-fast: 160ms;
   --dur-mid: 280ms;
+
+  /* ── CONTROL PANEL (homepage) ─────────────────────────────────────────────
+     Favicon colours only -- white, black, --color-red, --color-cyan -- plus
+     black tints. Measured pairs:
+
+       --pn-ink        on white          19.8
+       --pn-label      on white           7.46   secondary text
+       --pn-faint      on white           3.36   decorative display only (>=24px)
+       white           on --pn-deep      19.8
+       --pn-label-deep on --pn-deep       7.85   secondary text on black
+       --color-cyan    on --pn-plate      7.83   readout digits
+       white           on --color-red-cta 6.09
+
+     Cyan is never text on white (2.53:1). */
+  --pn-enamel:      #FFFFFF;
+  --pn-enamel-hi:   #FFFFFF;
+  --pn-ink:         #0A0A0A;
+  --pn-label:       #555555;
+  --pn-faint:       #8C8C8C;
+  --pn-deep:        #0A0A0A;
+  --pn-deep-hi:     #1C1C1C;
+  --pn-on-deep:     #FFFFFF;
+  --pn-label-deep:  #A3A3A3;
+  --pn-plate:       #0A0A0A;
+  --pn-phosphor:    var(--color-cyan);
+  --pn-phosphor-dim:#A3A3A3;
+  --pn-glow:        0, 174, 239;
+  --pn-seam-dark:   rgba(0, 0, 0, 0.12);
+  --pn-seam-light:  rgba(255, 255, 255, 0);
+
+  /* One grid for the whole homepage: a narrow bay and a wide bay, 1 : 2.
+     Every section, dark block and footer column snaps to these two lines. */
+  --pn-grid: minmax(0, 1fr) minmax(0, 2fr);
+  --pn-gutter: 3rem;
+  --pn-section: 7rem;
+
+  /* Three display steps, no others. d1 is the hero headline alone. */
+  --pn-d1: clamp(3rem, 6.2vw, 6.25rem);
+  --pn-d2: clamp(2.25rem, 4vw, 3.75rem);
+  --pn-d3: clamp(1.5rem, 2.2vw, 2rem);
+
+  /* The one lead size: every standfirst on every sheet. */
+  --pn-lead: clamp(1.375rem, 2.2vw, 2.125rem);
+
+  --font-panel: 'Archivo', 'Arial Narrow', sans-serif;
+  --font-readout: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Drafting paper: a 24px pitch. The gutter is two pitches, so at the design
+   width both column lines land on a dot. */
+  --pn-grain: radial-gradient(circle at 12px 12px, rgba(10, 10, 10, 0.13) 1px, transparent 1.5px);
+  --pn-grain-deep: radial-gradient(circle at 12px 12px, rgba(255, 255, 255, 0.07) 1.1px, transparent 1.6px);
+}
+
+/* ── Panel primitives ───────────────────────────────────────────────────── */
+
+/* ONE sheet of paper under the whole homepage, so the grid runs unbroken
+   from section to section instead of restarting at every box. */
+.maker-app {
+  background-color: var(--pn-enamel);
+  background-image: var(--pn-grain);
+  background-size: 24px 24px;
+  background-position: -12px -12px;
+  font-family: var(--font-readout);
+}
+
+/* Two families on the homepage: condensed Archivo for display, Plex Mono for
+   everything else. This outranks the global `p` rule, not scoped ones. */
+.maker-app p {
+  font-family: var(--font-readout);
+}
+
+.enamel {
+  color: var(--pn-ink);
+}
+
+/* ── Spec table ───────────────────────────────────────────────────────────
+   Every table on the sheet: rules top and bottom, hairlines between cells,
+   no side walls. Each cell draws its rule as a shadow on its left and top
+   edge and the table clips them, so whichever cell starts a row -- at any
+   text size, after any reflow -- loses its leading rule instead of drawing
+   a stray one. The first cell sits flush on the column line. */
+.spec-table {
+  display: grid;
+  overflow: hidden;
+  border-top: 1px solid var(--pn-ink);
+  border-bottom: 1px solid var(--pn-ink);
+}
+
+.spec-table > * {
+  min-width: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  box-shadow: -1px 0 0 var(--pn-ink), 0 -1px 0 var(--pn-ink);
+}
+
+.spec-table > :first-child {
+  padding-left: 0;
+}
+
+.enamel-deep {
+  background-color: var(--pn-deep);
+  background-image: var(--pn-grain-deep);
+  background-size: 24px 24px;
+  color: var(--pn-on-deep);
+}
+
+/* A seam between two bays: a dark cut with the lit edge of the next sheet
+   directly under it. */
+.seam {
+  border-top: 1px solid var(--pn-seam-dark);
+  box-shadow: inset 0 1px 0 var(--pn-seam-light);
+}
+
+/* Black laminate label plate. */
+.plate {
+  background-color: var(--pn-plate);
+  color: var(--pn-on-deep);
+}
+
+/* Engraved caption: small caps in the enamel's own dark, never grey. */
+.engrave {
+  font-family: var(--font-readout);
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
+}
+
+.enamel-deep .engrave {
+  color: var(--pn-label-deep);
+}
+
+/* Recessed readout window. */
+.readout {
+  background-color: var(--pn-plate);
+  color: var(--pn-on-deep);
+  font-family: var(--font-readout);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Indicator lamp. */
+.lamp {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--pn-phosphor);
+  box-shadow: none;
+}
+
+/* ── The key ───────────────────────────────────────────────────────────────
+   Every control on the homepage is this one component, in two colours: red
+   (the action) and white (everything else). The travel is real but small:
+   the cap sits on a 2px edge in its own darker shade and drops onto it when
+   pressed; the slit on its face lights cyan. Square, like the panel. */
+.key {
+  --cap: #FFFFFF;
+  --cap-edge: var(--pn-ink);
+  --cap-ink: var(--pn-ink);
+  --slit: transparent;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  min-height: 48px;
+  padding: 1rem 1.25rem 0.85rem;
+  font-family: var(--font-readout);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--cap-ink);
+  background-color: var(--cap);
+  border: 1.5px solid var(--cap-edge);
+  border-radius: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 0 var(--cap-edge);
+  transition:
+    transform 60ms var(--ease-out),
+    box-shadow 60ms var(--ease-out),
+    background-color 120ms linear;
+}
+
+/* The slit across the top of the cap. */
+.key::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 1.25rem;
+  width: 1.25rem;
+  height: 2px;
+  background-color: var(--slit);
+  transition: background-color 90ms linear;
+}
+
+.key:hover::before,
+.key:focus-visible::before,
+.key:active::before,
+.key.is-lit::before {
+  background-color: var(--color-cyan);
+}
+
+.key:active,
+.key.is-down {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--cap-edge);
+}
+
+.key-red {
+  --cap: var(--color-red-cta);
+  --cap-edge: #7A0A0F;
+  --cap-ink: var(--color-white);
+}
+
+.key-red:hover::before,
+.key-red:focus-visible::before,
+.key-red:active::before,
+.key-red.is-lit::before {
+  background-color: var(--color-white);
+}
+
+/* The one key that is currently selected: an ink cap. */
+.key.is-lit:not(.key-red) {
+  --cap: var(--pn-ink);
+  --cap-ink: var(--color-white);
+  --slit: var(--color-cyan);
+}
+
+.key:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key {
+    transition: none;
+  }
 }
 
 /* Reset and Base Styles */
@@ -150,6 +391,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Stops iOS enlarging text in landscape, which shoves the sheet sideways. */
+  text-size-adjust: 100%;
   scroll-padding-bottom: calc(var(--rail-h) + 2rem + env(safe-area-inset-bottom));
   background-color: var(--color-light);
   color: var(--color-dark);
@@ -337,7 +580,7 @@ a {
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: .14em;
-  font-size: .8rem;
+  font-size: 1rem;
   color: var(--color-muted);
 }
 

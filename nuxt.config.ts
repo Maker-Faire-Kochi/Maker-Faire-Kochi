@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  css: ['~/assets/css/main.css', '~/assets/css/hero-scene.css'],
+  css: ['~/assets/css/main.css'],
 
   // The hero scene is a server component: ~400KB of SVG path data that must be
   // sent once in the SSR HTML and never again in the client bundle.
@@ -80,6 +80,9 @@ export default defineNuxtConfig({
         // 500 (domain chips), 600 (lead/emphasis), 700 (countdown date). 300 and
         // 800 were requested and never referenced anywhere in app/.
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap' },
+        // Homepage panel faces: Archivo on its width axis (62 = condensed
+        // display, 125 = expanded captions) and Plex Mono for readouts.
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap' },
         { rel: 'apple-touch-icon', href: '/img/logo/apple-touch-icon.png' },
         // Declared rather than left to the browser's implicit /favicon.ico probe,
         // and paired with a large PNG so modern browsers and PWA surfaces get the

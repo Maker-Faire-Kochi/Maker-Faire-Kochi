@@ -38,15 +38,7 @@ async function onSubmit(e: Event) {
 <template>
   <div class="at-shell">
     <header class="at-hero">
-      <a href="/" class="at-logo" aria-label="Maker Faire Kochi home">
-        <img
-          src="/img/logo/mf-kochi-square-512.png"
-          width="40"
-          height="40"
-          alt=""
-        />
-        <span>Maker Faire Kochi</span>
-      </a>
+      <p class="at-sheet">Sht 04 · Interest</p>
       <h1 class="at-title">Get <span class="at-title-accent">Involved</span></h1>
       <p class="at-lede">
         Make. Share. Build. Connect. Maker Faire Kochi brings together makers, creators,
@@ -65,7 +57,7 @@ async function onSubmit(e: Event) {
         We read every response. If you offered to exhibit, volunteer, or partner, expect a
         follow-up as plans firm up.
       </p>
-      <a href="/" class="at-btn-secondary">Back to Maker Faire Kochi</a>
+      <a href="/" class="key at-btn-secondary">Back to Maker Faire Kochi</a>
     </div>
 
     <form v-else class="at-card" novalidate @submit="onSubmit">
@@ -255,7 +247,7 @@ async function onSubmit(e: Event) {
       </div>
 
       <div class="at-actions">
-        <button class="at-submit" type="submit" :disabled="submitting">
+        <button class="key key-red at-submit" type="submit" :disabled="submitting">
           {{ submitting ? 'Sending…' : 'Submit' }}
         </button>
       </div>
@@ -272,27 +264,23 @@ async function onSubmit(e: Event) {
 .at-hero {
   margin-bottom: 1.5rem;
 }
-.at-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  text-decoration: none;
-  color: var(--color-ink);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-.at-logo img {
-  border-radius: 8px;
+.at-sheet {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
 }
 .at-title {
-  margin: 0 0 0.75rem;
-  font-family: var(--font-body);
-  font-size: clamp(1.6rem, 4vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--color-ink);
+  margin: 0 0 1rem;
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-size: clamp(3rem, 9vw, 4.5rem);
+  font-weight: 900;
+  line-height: 0.88;
+  text-transform: uppercase;
+  color: var(--pn-ink);
 }
 /* Large display accent — --color-red clears 3:1 large-text on white. */
 .at-title-accent {
@@ -300,64 +288,61 @@ async function onSubmit(e: Event) {
 }
 .at-lede {
   margin: 0 0 0.75rem;
-  font-size: 1rem;
-  line-height: 1.55;
-  color: var(--color-gray-800);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--pn-ink);
 }
 .at-note {
   margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-muted);
-  line-height: 1.45;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--color-cyan);
+  font-size: 1rem;
+  color: var(--pn-label);
+  line-height: 1.5;
 }
 .at-brand-bar {
   display: flex;
-  gap: 0.35rem;
-  height: 3px;
-  margin: 0.35rem 0 0.75rem;
+  height: 4px;
+  margin: 0 -1.35rem 0.75rem;
 }
-.at-brand-bar .cyan {
-  flex: 2;
-  border-radius: 2px;
-  background: var(--color-cyan);
-}
-.at-brand-bar .red {
-  flex: 1;
-  border-radius: 2px;
-  background: var(--color-red);
-}
+.at-brand-bar .cyan { flex: 2; background: var(--color-cyan); }
+.at-brand-bar .red { flex: 1; background: var(--color-red-cta); }
 .at-card {
-  background: var(--color-white);
-  border: 1px solid var(--separator);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(41, 41, 41, 0.04), 0 8px 24px rgba(0, 174, 239, 0.06);
-  padding: 0.85rem 1.35rem 1.5rem;
+  background: #FFFFFF;
+  border: 1px solid var(--pn-ink);
+  box-shadow: 4px 4px 0 rgba(10, 10, 10, 0.1);
+  padding: 0 1.35rem 1.5rem;
 }
 .at-thanks {
   padding: 1.25rem 1.5rem 2rem;
   text-align: left;
 }
 .at-thanks h2 {
-  margin: 0 0 0.75rem;
-  font-family: var(--font-body);
-  font-size: 1.35rem;
-  color: var(--color-ink);
+  margin: 0.5rem 0 0.75rem;
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--pn-ink);
 }
 .at-thanks p {
   margin: 0 0 1.25rem;
-  color: var(--color-muted);
+  color: var(--pn-label);
   line-height: 1.5;
 }
 .at-input,
 .at-textarea {
   width: 100%;
   box-sizing: border-box;
-  font-family: var(--font-body);
+  font-family: var(--font-readout);
+  /* 16px: anything smaller makes iOS zoom the page when the field is focused. */
   font-size: 1rem;
-  color: var(--color-ink);
-  background: var(--color-white);
-  border: 1px solid var(--color-gray-400);
-  border-radius: 8px;
+  color: var(--pn-ink);
+  background: #FFFFFF;
+  border: 1px solid var(--pn-ink);
+  border-radius: 0;
   padding: 0.7rem 0.85rem;
   min-height: 44px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -370,8 +355,7 @@ async function onSubmit(e: Event) {
 .at-input:focus,
 .at-textarea:focus {
   outline: none;
-  border-color: var(--color-cyan);
-  box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.22);
+  box-shadow: 0 0 0 1px var(--pn-ink), 3px 3px 0 var(--color-cyan);
 }
 .at-input-follow {
   margin-top: 0.65rem;
@@ -385,18 +369,21 @@ async function onSubmit(e: Event) {
   display: flex;
   align-items: flex-start;
   gap: 0.65rem;
-  padding: 0.55rem 0.4rem;
-  border-radius: 8px;
+  min-height: 44px;
+  padding: 0.65rem 0.5rem;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.35;
-  color: var(--color-ink);
+  color: var(--pn-ink);
 }
 .at-choice:hover {
   background: rgba(0, 174, 239, 0.06);
 }
 .at-choice:has(input:checked) {
-  background: rgba(0, 174, 239, 0.1);
+  background: rgba(0, 174, 239, 0.08);
+  border-color: var(--pn-ink);
+  box-shadow: inset 3px 0 0 var(--color-red-cta);
 }
 .at-choice input {
   margin-top: 0.2rem;
@@ -408,58 +395,22 @@ async function onSubmit(e: Event) {
 .at-actions {
   padding: 0.5rem 0 0.25rem;
 }
-.at-submit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0.65rem 1.4rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--color-red-cta);
-  color: var(--color-white);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-}
-.at-submit:hover:not(:disabled) {
-  filter: brightness(0.96);
-}
+.at-submit { min-width: 10rem; }
 .at-submit:disabled {
   opacity: 0.65;
   cursor: wait;
 }
-.at-submit:focus-visible {
-  outline: 2px solid var(--color-cyan);
-  outline-offset: 2px;
-}
-.at-btn-secondary {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-cyan);
-  color: var(--color-ink);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.at-btn-secondary:hover {
-  background: rgba(0, 174, 239, 0.08);
-}
+.at-btn-secondary { text-decoration: none; }
 .at-errors {
-  background: rgba(196, 18, 26, 0.06);
-  border: 1px solid rgba(196, 18, 26, 0.28);
-  border-radius: 8px;
+  border: 1px solid var(--color-red-cta);
+  box-shadow: inset 3px 0 0 var(--color-red-cta);
   padding: 0.75rem 1rem;
   margin: 0.5rem 0 1rem;
 }
 .at-errors p {
   margin: 0.2rem 0;
   color: var(--color-red-cta);
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 .at-hp {
   position: absolute;

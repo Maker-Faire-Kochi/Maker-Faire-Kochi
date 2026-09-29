@@ -20,7 +20,7 @@ defineProps<{
 <style scoped>
 .at-section {
   padding: 1.5rem 0;
-  border-bottom: 1px solid var(--separator);
+  border-bottom: 1px solid rgba(10, 10, 10, 0.18);
 }
 .at-section:last-of-type {
   border-bottom: none;
@@ -31,18 +31,20 @@ defineProps<{
 .at-section-title {
   margin: 0;
   display: inline-block;
-  font-family: var(--font-body);
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--color-ink);
-  letter-spacing: -0.01em;
-  padding-bottom: 0.35rem;
-  border-bottom: 2px solid var(--color-cyan);
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--pn-ink);
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--pn-ink);
 }
 .at-section-sub {
   margin: 0.45rem 0 0;
-  font-size: 0.875rem;
-  color: var(--color-muted);
+  font-size: 1rem;
+  color: var(--pn-label);
   line-height: 1.45;
 }
 </style>

@@ -7,6 +7,17 @@ import { EVENT, EVENT_START, EVENT_END, CONTACT_EMAIL, useCountdown } from '~/co
  */
 const { units, phase } = useCountdown()
 
+/** "27 January 2027" set as "27" / "January 2027", so the range breaks as
+ *  "26 – 27" over the month rather than wherever the measure runs out. */
+const [endDay, ...endRest] = EVENT.rangeEnd.label.split(' ')
+const endMonth = endRest.join(' ')
+
+const fields = [
+  { label: 'Opens', value: EVENT.gatesLabel },
+  // Stated rather than left to inference: "Kochi, Kerala" is a city.
+  { label: 'Venue', value: EVENT.venueLabel },
+]
+
 /**
  * The dates are the point of this section, and until now they existed only as
  * pixels — invisible to search results, link previews and "add to calendar".
@@ -77,44 +88,39 @@ useHead({
 </script>
 
 <template>
-  <section id="countdown" class="countdown-section section-padding">
-    <div class="container countdown-inner">
-      <h2 class="countdown-title display-type">
-        Two days. One harbour.<br />
-        <span class="countdown-title-accent">Everything anyone made.</span>
-      </h2>
+  <section id="countdown" class="countdown-section enamel">
+    <SheetHead n="03" label="When" />
 
-      <!-- The date leads, and it renders in every phase.
-           It used to sit BELOW the countdown grid at 14.4px in muted grey, under
-           four 52px numerals — so the number that changes every second dominated
-           the section and the date the whole section exists to communicate was
-           the smallest thing in it. That is the inversion this fixes. -->
+    <h2 class="countdown-title">
+      Two days. One harbour.<br />
+      Everything anyone made.
+    </h2>
+
+    <div class="countdown-facts">
+      <!-- The date leads, and it renders in every phase: it is the fact the
+           section exists for, so it outranks the ticking figures below it. -->
       <p class="countdown-date">
         <time :datetime="EVENT.rangeStart.iso">{{ EVENT.rangeStart.label }}</time>
         &ndash;
-        <time :datetime="EVENT.rangeEnd.iso">{{ EVENT.rangeEnd.label }}</time>
+        <time :datetime="EVENT.rangeEnd.iso">{{ endDay }}<br />{{ endMonth }}</time>
       </p>
 
-      <p class="countdown-when">
-        <span>{{ EVENT.gatesLabel }}</span>
-        <span class="countdown-dot" aria-hidden="true"></span>
-        <span>{{ EVENT.place }}</span>
-        <span class="countdown-dot" aria-hidden="true"></span>
-        <span>{{ EVENT.admissionLabel }}</span>
-      </p>
+      <dl class="countdown-when">
+        <div v-for="f in fields" :key="f.label" class="when-field">
+          <dt>{{ f.label }}</dt>
+          <dd>{{ f.value }}</dd>
+        </div>
+      </dl>
+    </div>
 
-      <!-- Stated rather than left to inference. "Kochi, Kerala" is a city, and
-           without this line a reader reasonably assumes it is the venue. -->
-      <p class="countdown-venue">{{ EVENT.venueLabel }}</p>
-
+    <div class="instrument">
       <template v-if="phase === 'upcoming'">
-        <p class="countdown-eyebrow eyebrow">Time remaining</p>
+        <p class="instrument-label engrave">Time remaining</p>
 
         <!-- No aria-live: a value that changes every second would be relentless
-             noise on a screen reader. The date line above carries the same
-             information, and is what the group's label points at. -->
+             noise on a screen reader. The date above carries the same fact. -->
         <div
-          class="countdown-grid"
+          class="countdown-grid spec-table"
           role="group"
           aria-label="Time remaining until Maker Faire Kochi opens on 26 January 2027"
         >
@@ -137,189 +143,173 @@ useHead({
 </template>
 
 <style scoped>
-/* Dark ground on purpose: it gives the page a rhythm between the white hero,
-   this band, and the white DOMAIN section, rather than one unbroken sheet. */
-/* This section now CLOSES the page rather than sitting under the hero, so it
-   is the last thing before the footer -- and the footer is also dark. The
-   hairline that keeps the two dark planes apart is owned by .maker-footer's
-   border-top; declaring it on both sides stacks two 1px rules into a 2px one. */
 .countdown-section {
-  background-color: var(--color-ink);
-  color: var(--label-on-dark);
-}
-
-/* gap:0 plus per-child margins. The stack previously used a uniform 1.5rem gap
-   and then clawed three of the gaps back with negative margins (-0.5rem,
-   -0.75rem, -0.75rem) -- which is a gap that was simply the wrong size, paid
-   for three times. Graduated spacing states the intended rhythm directly. */
-.countdown-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0;
-}
-
-.countdown-title {
-  font-size: var(--text-title-1);
-  line-height: var(--text-title-1-lh);
-  color: var(--label-on-dark);
-  max-width: 22ch;
-}
-
-.countdown-title-accent {
-  color: var(--color-cyan);
-}
-
-/* Deliberately NOT var(--font-headline). Bungee is wide enough that this line
-   wraps mid-date at 390px, and its weight reads shoutier than a date needs to
-   be — the point here is legibility, not volume. Outfit 700 at this size is
-   unmistakably the primary line without raising its voice. */
-.countdown-date {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: clamp(1.5rem, 3.4vw, 2.1rem);
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  color: var(--label-on-dark);
-  margin-top: var(--sp-4);
-}
-
-.countdown-when {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  color: var(--label-secondary-on-dark);
-}
-
-.countdown-venue {
-  margin-top: var(--sp-1);
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  letter-spacing: 0.04em;
-  color: var(--label-secondary-on-dark);
-}
-
-.countdown-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: var(--color-cyan);
-}
-
-.countdown-eyebrow {
-  margin-top: var(--sp-5);
-  color: var(--label-secondary-on-dark);
-}
-
-/* ── One segmented control, not four floating cards ───────────────────────
-   The four blocks were `flex-wrap` with `min-width: 5.25rem`, so on any width
-   that could not seat all four they wrapped into a ragged 2x2 whose cells were
-   not the same width as each other -- four separate objects that happened to
-   sit near each other.
-
-   A 4-column grid inside ONE container makes it a single instrument: the cells
-   are equal by construction at every width, they cannot wrap, and the dividers
-   say the four figures are one reading rather than four facts. */
-.countdown-grid {
   display: grid;
-  /* auto-fit + a REM minimum, not a fixed repeat(4). A rigid four-column track
-     cannot reflow, so at 200% text the cells stay 1/4 of the container while
-     the labels inside them double -- "SECONDS" then clips, and clipped is
-     worse than the ragged wrap this replaced. Because the minimum is in rem it
-     scales with the reader's text size: four across normally, dropping to two
-     when a cell can no longer be 4.5rem. Cells stay equal either way, which is
-     the property that made this a segmented control rather than four cards.
-
-     3.75rem is derived, not picked: the narrowest supported viewport is 320px,
-     .container eats 2 x 1.5rem, leaving 272px, and auto-fit seats
-     floor((272 + gap) / (60 + gap)) = 4 columns with ~13px to spare. Raising it
-     to 4.5rem drops 320px to a 3 + 1 orphan, which is exactly the ragged wrap
-     this layout exists to prevent -- so re-check 320px if you change it. */
-  grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
-  /* The dividers ARE the 1px gaps: the container paints the separator colour
-     and each cell paints over it. A border-left on each cell cannot survive
-     reflow (the first cell of the second row would draw a stray leading rule);
-     grid gaps separate every row and column correctly however it wraps. */
-  gap: 1px;
-  margin-top: var(--sp-3);
-  width: 100%;
-  max-width: 26rem;
-  overflow: hidden;
-  border-radius: var(--radius-card);
-  border: 1px solid var(--separator-on-dark);
-  background-color: var(--separator-on-dark);
+  grid-template-columns: var(--pn-grid);
+  padding: 0 0 var(--pn-section);
 }
 
-/* Demoted to a secondary readout. These are the ephemeral figures; the date
-   above is the fact. */
+/* The sheet title, set like every other sheet's. */
+.countdown-title {
+  grid-column: 1;
+  padding: 0 var(--pn-gutter);
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--pn-d2);
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--pn-ink);
+}
+
+.countdown-facts {
+  grid-column: 2;
+  padding-right: var(--pn-gutter);
+}
+
+/* The date is the largest fact on the sheet: the hero's display step. */
+.countdown-date {
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: clamp(2.75rem, 5vw, 4.75rem);
+  line-height: 0.88;
+  text-transform: uppercase;
+  color: var(--pn-ink);
+}
+
+/* Labelled fields, as in the hero's title block. */
+.countdown-when {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0 0;
+}
+
+.when-field dt {
+  font-family: var(--font-readout);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
+}
+
+.when-field dd {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-readout);
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.3;
+  color: var(--pn-ink);
+}
+
+/* Ruled like every other table on the sheet. */
+.instrument {
+  grid-column: 2;
+  margin: 4rem var(--pn-gutter) 0 0;
+}
+
+.instrument-label {
+  color: var(--pn-ink);
+}
+
+/* auto-fit with a rem minimum: four equal cells normally, a clean 2x2 at
+   150% text, one column at 200% -- never a ragged orphan. 3.75rem is the
+   largest minimum that still seats four at 320px. .spec-table draws the
+   rules so that a wrapped row never carries a stray leading one. */
+.countdown-grid {
+  grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
+  margin-top: 0.85rem;
+}
+
+/* Minutes and Seconds at 14px need about 65px. Four cells at 320px leave
+   about 54px, and at 360px they still miss by a pixel, so the words clip
+   against the cell wall. 8.5rem is two columns on a 320–399px sheet and
+   one column once text size doubles, because the minimum grows with rem.
+   The 3.75rem minimum stays above 399px, because raising it leaves a
+   3+1 orphan in the band between three columns and four. */
+@media (max-width: 399px) {
+  .countdown-grid {
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  }
+}
+
 .time-block {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-3) var(--sp-1);
-  /* Paints over the container's separator ground, leaving only the gaps. */
-  background-color: var(--color-charcoal);
-  min-width: 0;
+  gap: 0.75rem;
 }
 
 .time-number {
-  font-family: var(--font-headline);
-  font-size: clamp(1.5rem, 3.6vw, 2.15rem);
-  line-height: 1;
-  color: var(--color-cyan);
-  /* The seconds box would jitter every tick without tabular figures. */
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: clamp(2rem, 3.4vw, 3.25rem);
+  line-height: 0.9;
+  color: var(--pn-ink);
   font-variant-numeric: tabular-nums;
 }
 
 .time-label {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-family: var(--font-readout);
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--label-secondary-on-dark);
+  color: var(--pn-label);
 }
 
 .countdown-live {
-  margin-top: var(--sp-5);
-  font-family: var(--font-headline);
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
-  color: var(--color-red-on-dark);
+  margin-top: 1rem;
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--pn-d3);
+  text-transform: uppercase;
+  color: var(--pn-ink);
 }
 
-/* Past tense, so it recedes rather than announcing itself. */
 .countdown-ended {
-  color: var(--label-secondary-on-dark);
+  color: var(--pn-label);
 }
 
-/* Same reason as the hero band: once these two facts wrap onto separate lines
-   the dot between them is stranded at the end of the first line, separating
-   nothing. Stack them and drop it. */
-@media (max-width: 560px) {
-  .countdown-when {
-    flex-direction: column;
-    gap: 0.4rem;
+@media (max-width: 900px) {
+  .countdown-section {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 5rem;
   }
 
-  .countdown-dot {
-    display: none;
+  .countdown-title,
+  .countdown-facts,
+  .instrument {
+    grid-column: 1;
+  }
+
+  .countdown-title {
+    padding: 0 1.25rem;
+  }
+
+  .countdown-facts {
+    margin-top: 1.5rem;
+    padding: 0 1.25rem;
+  }
+
+  .countdown-date {
+    font-size: clamp(3rem, 16vw, 5.5rem);
+  }
+
+  .instrument {
+    margin: 3rem 1.25rem 0;
+  }
+
+  .time-block {
+    padding: 1rem 0.75rem 1.25rem;
   }
 }
 
 @media (max-width: 480px) {
   .time-block {
-    padding: var(--sp-2) 0.25rem;
-  }
-
-  .time-label {
-    font-size: 0.62rem;
-    letter-spacing: 0.06em;
+    padding: 0.85rem 0.5rem 1rem;
   }
 }
 </style>

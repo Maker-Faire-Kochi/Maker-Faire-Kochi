@@ -22,7 +22,10 @@ useSeoMeta({ title: 'Admin login — Maker Faire Kochi' })
 .boot {
   margin: 3rem auto;
   text-align: center;
-  color: var(--color-muted);
-  font-family: var(--font-body);
+  color: var(--pn-label);
+  font-family: var(--font-readout);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 </style>

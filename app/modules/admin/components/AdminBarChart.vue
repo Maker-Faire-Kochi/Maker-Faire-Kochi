@@ -1,97 +1,64 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import type { CountRow } from '../composables/useInterestAnalytics'
 
-defineProps<{
+withDefaults(defineProps<{
+  fig: string
   title: string
   rows: CountRow[]
   empty?: string
-  /** 'cyan' | 'red' bar fill */
-  tone?: 'cyan' | 'red'
-}>()
+  /** 'cyan' | 'red' | 'ink' bar fill */
+  tone?: 'cyan' | 'red' | 'ink'
+  limit?: number
+}>(), { tone: 'cyan', limit: 12 })
+
+/** Bars draw out from zero once, after first paint. */
+const drawn = ref(false)
+onMounted(() => requestAnimationFrame(() => { drawn.value = true }))
 </script>
 
 <template>
-  <section class="chart-card">
-    <h3 class="chart-title">{{ title }}</h3>
-    <p v-if="!rows.length" class="empty">{{ empty || 'No responses yet' }}</p>
-    <ul v-else class="bars">
-      <li v-for="row in rows" :key="row.value" class="bar-row">
-        <div class="bar-meta">
-          <span class="bar-label">{{ row.label }}</span>
-          <span class="bar-count">{{ row.count }} <span class="pct">({{ row.pct }}%)</span></span>
-        </div>
-        <div class="track" role="presentation">
-          <div
+  <section class="a-panel">
+    <header class="a-head">
+      <span class="a-fig">Fig. {{ fig }}</span>
+      <h3 class="a-title">{{ title }}</h3>
+    </header>
+    <p v-if="!rows.length" class="a-empty">{{ empty || 'No answers yet' }}</p>
+    <ol v-else class="bars">
+      <li v-for="(row, i) in rows.slice(0, limit)" :key="row.value" class="bar-row">
+        <span class="bar-i">{{ String(i + 1).padStart(2, '0') }}</span>
+        <span class="bar-label">{{ row.label }}</span>
+        <span class="bar-count">{{ row.count }}<span class="pct"> · {{ row.pct }}%</span></span>
+        <span class="track" aria-hidden="true">
+          <span
             class="fill"
-            :class="tone === 'red' ? 'fill-red' : 'fill-cyan'"
-            :style="{ width: `${Math.max(row.pct, row.count ? 2 : 0)}%` }"
+            :class="`fill-${tone}`"
+            :style="{ width: drawn ? `${Math.max(row.pct, row.count ? 1.5 : 0)}%` : '0%', transitionDelay: `${i * 40}ms` }"
           />
-        </div>
+        </span>
       </li>
-    </ul>
+    </ol>
   </section>
 </template>
 
 <style scoped>
-.chart-card {
-  background: var(--color-white);
-  border: 1px solid var(--separator);
-  border-radius: 12px;
-  padding: 1.1rem 1.2rem 1.25rem;
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  column-gap: 0.5rem;
+  row-gap: 0.3rem;
+  font-family: var(--font-readout);
+  font-size: 0.78rem;
 }
-.chart-title {
-  margin: 0 0 1rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--color-ink);
-}
-.empty {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 0.875rem;
-}
-.bars {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.bar-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.3rem;
-  font-size: 0.8125rem;
-}
-.bar-label {
-  color: var(--color-ink);
-  font-weight: 500;
-}
-.bar-count {
-  color: var(--color-muted);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.pct {
-  opacity: 0.85;
-}
-.track {
-  height: 8px;
-  border-radius: 999px;
-  background: var(--bg-grouped);
-  overflow: hidden;
-}
-.fill {
-  height: 100%;
-  border-radius: 999px;
-  min-width: 0;
-}
-.fill-cyan {
-  background: var(--color-cyan);
-}
-.fill-red {
-  background: var(--color-red-cta);
-}
+.bar-i { color: var(--pn-label); }
+.bar-label { line-height: 1.35; overflow-wrap: anywhere; }
+.bar-count { font-weight: 600; font-variant-numeric: tabular-nums; }
+.pct { font-weight: 400; color: var(--pn-label); }
+.track { grid-column: 2 / -1; height: 6px; background: rgba(10, 10, 10, 0.06); }
+.fill { display: block; height: 100%; transition: width 700ms var(--ease-out); }
+.fill-cyan { background: var(--color-cyan); }
+.fill-red { background: var(--color-red-cta); }
+.fill-ink { background: var(--pn-ink); }
+@media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
 </style>

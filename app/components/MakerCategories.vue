@@ -30,224 +30,297 @@ const domains = [
   'Art & Illustration',
   'Science & Space',
 ]
+
+/** Items drawn and ballooned in the hero schematic, by the same number. */
+const keyed = new Set(['Robotics & AI', 'Textiles & Weaving', 'Electronics & IoT', 'Repair & Restoration', 'Boats, Nets & Rope', 'Green Tech & Farming'])
 </script>
 
 <template>
-  <section id="categories" class="domain-section section-padding">
-    <div class="container domain-inner">
-      <!-- Decorative: a screen reader must not read a word the sighted reader
-           sees crossed out. The real heading is the line below it. -->
-      <p class="domain-word" aria-hidden="true">
-        <span class="domain-word-text">Domain</span>
+  <section id="categories" class="domain-section enamel">
+    <SheetHead n="02" label="Domains" />
+
+    <h2 class="domain-claim">There is no domain for makers.</h2>
+
+    <p class="domain-quote">
+      Everyone is a maker. The aunt who
+      alters every hand-me-down until it fits. The uncle who has repaired the
+      same mixer four times rather than replace it. The neighbour whose kite
+      actually flies. None of them call it making — it is.
+    </p>
+
+    <p class="domain-support">
+      <span class="domain-note" aria-hidden="true">Note</span>
+      This is not a technology fair. Solder is welcome; so are dough, thread,
+      clay, coir and wood. If you made it, you can show it.
+    </p>
+
+    <!-- A schedule, not a menu: plain numbered rows, not controls; they
+         are not destinations. -->
+    <div class="domain-schedule">
+      <p class="domain-heads">
+        <span aria-hidden="true">No. / Domain</span>
+        <span class="domain-legend"><span class="domain-ring" aria-hidden="true"></span>Drawn on sheet 00</span>
       </p>
+      <ol class="domain-list">
+        <li v-for="(d, i) in domains" :key="d" class="domain-row">
+          <span class="domain-n" :class="{ 'is-keyed': keyed.has(d) }" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+          {{ d }}
+        </li>
+      </ol>
+    </div>
 
-      <h2 class="domain-claim display-type">There is no domain for makers.</h2>
-
-      <!-- The section's thesis, not its footnote. It is deliberately ranked ABOVE
-           the paragraph below it: two paragraphs at identical size and colour give
-           the reader nothing to hold on to, and this is the one that has to land. -->
-      <p class="domain-quote">
-        <strong class="domain-emphasis">Everyone is a maker.</strong> The aunt who
-        alters every hand-me-down until it fits. The uncle who has repaired the
-        same mixer four times rather than replace it. The neighbour whose kite
-        actually flies. None of them call it making — it is.
+    <div class="domain-banner">
+      <h3 class="domain-banner-title">So bring the thing that doesn't fit.</h3>
+      <p class="domain-banner-text">
+        Tell us what you made, how you made it, and what broke on the way.
       </p>
-
-      <p class="domain-support">
-        This is not a technology fair. Solder is welcome; so are dough, thread,
-        clay, coir and wood. If you made it, you can show it.
-      </p>
-
-      <ul class="domain-list">
-        <li v-for="d in domains" :key="d" class="domain-chip">{{ d }}</li>
-      </ul>
-
-      <div class="domain-banner">
-        <div>
-          <h3 class="domain-banner-title subhead">So bring the thing that doesn't fit.</h3>
-          <p class="domain-banner-text">
-            Tell us what you made, how you made it, and what broke on the way.
-          </p>
-        </div>
-        <a href="/interestform" class="btn-maker btn-maker-primary domain-banner-cta">Get Involved</a>
-      </div>
+      <a href="/interestform" class="key key-red domain-banner-cta">Get Involved</a>
     </div>
   </section>
 </template>
 
 <style scoped>
-/* Grouped ground, not white. About above it and this section were both white,
-   so two distinct arguments read as one unbroken sheet. Three consecutive
-   planes now: white (About) -> grouped (Domains) -> ink (Countdown). */
 .domain-section {
-  background-color: var(--bg-grouped);
-}
-
-.domain-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.domain-word {
-  position: relative;
-  display: inline-block;
-  font-family: var(--font-headline);
-  font-size: clamp(2.75rem, 11vw, 6rem);
-  line-height: 1;
-  text-transform: uppercase;
-  /* Recessive, but it must still be READABLE — a word you cannot read cannot be
-     meaningfully struck through, and the strike is the whole point. --color-surface
-     (#F3F3F3) on white is ~1.1:1 and effectively invisible.
-
-     #AEB7C0 was the fix for that and did not go far enough: 2.03:1, which is under
-     even the 3:1 large-text floor, so the comment above and the value below said
-     opposite things. #8D959D followed and measured 3.04:1 ON WHITE.
-
-     It is #828A92 now, and the reason is a trap worth remembering: a contrast
-     figure belongs to a PAIR, not to a colour. Moving this section to the
-     grouped ground (#F7F7F7) silently dropped #8D959D to 2.83:1 — back under
-     the 3:1 large-text floor — without anyone touching the text colour. The
-     background moved, so the measurement moved with it.
-
-     #828A92 on #F7F7F7 is 3.27:1, i.e. better than the 3.04:1 this ever had on
-     white, and still recessive enough that the strike is what the eye lands on.
-     Re-measure this pair if the section ground changes again. */
-  color: #828A92;
-  user-select: none;
-}
-
-/* Struck by DEFAULT. The strike carries the meaning, so it can never depend on
-   JS or on an observer firing — if it failed to run, the word would read
-   unstruck, i.e. the exact opposite of what the section says. */
-.domain-word-text::after {
-  content: '';
-  position: absolute;
-  left: -2%;
-  right: -2%;
-  top: 52%;
-  height: clamp(4px, 0.9vw, 10px);
-  background-color: var(--color-red-cta);
-  transform: scaleX(1);
-  transform-origin: left center;
-}
-
-/* A one-shot sweep on load, NOT a scroll-driven one.
-   The previous version used `animation-timeline: view()` with a range, which
-   fills to the *from* state (scaleX(0)) any time the section sits before that
-   range — so the word rendered unstruck, which says the opposite of what this
-   section means. Printing the page showed it plainly: no strike at all.
-   This runs once, always finishes, and its end state is the struck word. */
-@media (prefers-reduced-motion: no-preference) {
-  .domain-word-text::after {
-    animation: strike-sweep 620ms var(--ease-out) 240ms both;
-  }
-}
-
-@keyframes strike-sweep {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+  display: grid;
+  grid-template-columns: var(--pn-grid);
+  padding: 0 0 var(--pn-section);
 }
 
 .domain-claim {
-  font-size: var(--text-title-1);
-  line-height: var(--text-title-1-lh);
-  color: var(--label);
-  max-width: 20ch;
+  grid-column: 1;
+  grid-row: 2;
+  padding: 0 var(--pn-gutter);
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--pn-d2);
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--pn-ink);
 }
 
-/* A pull quote. Same words as before, but at --color-muted (#5A6169) and 1.1rem
-   the line that carries the whole argument was set at the emphasis of a caption.
-   --color-gray-800 is #3A3F45 on white, 10.62:1. The narrower measure is
-   deliberate: a short line is what makes a statement read as a statement. */
 .domain-quote {
-  margin-top: var(--sp-4);
+  grid-column: 2;
+  grid-row: 2;
+  padding-right: var(--pn-gutter);
   max-width: 46ch;
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
-  line-height: 1.5;
-  color: var(--color-gray-800);
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 700;
+  line-height: 1.12;
+  font-size: var(--pn-lead);
+  color: var(--pn-ink);
 }
 
+/* A drafting note in the narrow bay. Its label sits on the schedule's head
+   line and its rule runs on into the list's, one line across the bays. */
 .domain-support {
-  margin-top: var(--sp-3);
-  max-width: 56ch;
-  color: var(--label-secondary);
+  grid-column: 1;
+  grid-row: 3;
+  align-self: start;
+  margin: 5rem 0 0;
+  padding: 0 var(--pn-gutter) 0;
+  font-family: var(--font-readout);
+  font-size: 1.125rem;
+  line-height: 1.65;
+  line-height: 1.55;
+  color: var(--pn-ink);
 }
 
-.domain-emphasis {
-  color: var(--color-ink);
-  font-weight: 600;
+.domain-note,
+.domain-heads {
+  font-family: var(--font-readout);
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
+}
+
+.domain-note {
+  display: block;
+  margin: 0 calc(-1 * var(--pn-gutter)) 0.9rem 0;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--pn-ink);
+}
+
+.domain-schedule {
+  grid-column: 2;
+  grid-row: 3;
+  margin: 5rem var(--pn-gutter) 0 0;
+}
+
+.domain-heads {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.6rem;
+}
+
+.domain-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.domain-ring {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 1.5px solid var(--color-cyan);
+  border-radius: 50%;
 }
 
 .domain-list {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-5);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(7, auto);
+  grid-auto-flow: column;
+  column-gap: var(--pn-gutter);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* Deliberately NOT styled like the nav pills — no shadow, no hover lift, no
-   pointer. These are labels, and anything button-like here would be a false
-   affordance. */
-/* The fill flips to white BECAUSE the section ground changed: #F3F3F3 chips on
-   a #F7F7F7 ground are a 1% difference, i.e. invisible. On the grouped ground
-   the lighter fill is what makes a chip read as an object. Still deliberately
-   not styled like the nav pills -- no shadow, no hover lift, no pointer. */
-.domain-chip {
-  padding: var(--sp-1) var(--sp-3);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--separator);
-  background-color: var(--surface-1);
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
+/* Column-major, so each column reads down as one list. Both columns get
+   their own top rule. */
+.domain-row:nth-child(7n + 1) {
+  border-top: 1px solid var(--pn-ink);
+}
+
+.domain-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--pn-ink);
+  font-family: var(--font-readout);
+  font-size: 1.125rem;
   font-weight: 500;
-  color: var(--label);
+  color: var(--pn-ink);
+}
+
+.domain-n {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-family: var(--font-readout);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pn-label);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The balloon from the hero drawing, on the same number. */
+.domain-n.is-keyed {
+  border: 1.5px solid var(--color-cyan);
+  border-radius: 50%;
+  font-weight: 600;
+  color: var(--pn-ink);
 }
 
 .domain-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-5);
-  flex-wrap: wrap;
-  width: 100%;
-  margin-top: var(--sp-6);
-  padding: var(--sp-5);
-  text-align: left;
-  border-radius: var(--radius-card);
-  border: 1px solid var(--separator);
-  background-color: var(--surface-1);
+  grid-column: 2;
+  grid-row: 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--pn-gutter);
+  align-items: end;
+  margin-top: 6rem;
+  padding: 0 var(--pn-gutter) 0 0;
 }
 
 .domain-banner-title {
-  font-size: var(--text-title-2);
-  line-height: var(--text-title-2-lh);
-  color: var(--label);
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--pn-d3);
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--pn-ink);
 }
 
 .domain-banner-text {
-  margin-top: var(--sp-1);
-  color: var(--label-secondary);
+  grid-column: 1;
+  margin-top: 0.75rem;
+  font-family: var(--font-readout);
+  font-size: 1.125rem;
+  color: var(--pn-label);
 }
 
-@media (max-width: 768px) {
-  .domain-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
+.domain-banner-cta {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+@media (max-width: 900px) {
+  .domain-section {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 5rem;
   }
 
-  .domain-banner .btn-maker {
-    width: 100%;
-    justify-content: center;
+  .domain-claim,
+  .domain-quote,
+  .domain-support,
+  .domain-schedule,
+  .domain-banner {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .domain-claim,
+  .domain-quote,
+  .domain-banner {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .domain-quote {
+    margin-top: 1.5rem;
+  }
+
+  .domain-support {
+    margin: 2.5rem 1.25rem 0;
+    padding: 0;
+    max-width: 40ch;
+  }
+
+  .domain-note {
+    margin-right: 0;
+  }
+
+  .domain-schedule {
+    margin: 2.5rem 1.25rem 0;
+  }
+
+  .domain-banner {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 4rem;
+  }
+
+  .domain-banner-cta {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 1.5rem;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 560px) {
+  .domain-list {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+
+  .domain-row:nth-child(7n + 1) {
+    border-top: 0;
+  }
+
+  .domain-row:first-child {
+    border-top: 1px solid var(--pn-ink);
   }
 }
 </style>
