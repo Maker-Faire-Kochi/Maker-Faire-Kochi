@@ -148,7 +148,10 @@ function zoom(id: MachineId) {
 function offset(id: MachineId) {
   const pack = wide.value ? 0 : (PACK[id] ?? 0)
   const spread = wide.value ? (SPREAD[id] ?? 0) : 0
-  return pack + spread
+  // The vala grows left of its anchor, which parked the pier and the hover
+  // box off the sheet. Slide the whole machine back onto the page.
+  const nudge = id === 'vala' ? 36 : 0
+  return pack + spread + nudge
 }
 
 /** `pose` is an SVG transform: grow about the anchor, then slide by `offset`. */
@@ -445,7 +448,7 @@ const woolTuft = fluff(642, 374, 22, 11)
       @pointerenter="hover = 'vala'"
       @pointerleave="hover = null"
     >
-      <rect class="hit" x="0" y="292" width="322" height="308" />
+      <rect class="hit" x="4" y="308" width="292" height="292" />
       <!-- Backwater sits under the net, between the pier and the sewing
            machine. The surface slides by exactly one wave period. -->
       <g clip-path="url(#sch-water-clip)">
