@@ -84,9 +84,9 @@ export default defineNuxtConfig({
         // display, 125 = expanded captions) and Plex Mono for readouts.
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap' },
         { rel: 'apple-touch-icon', href: '/img/logo/apple-touch-icon.png' },
-        // Declared rather than left to the browser's implicit /favicon.ico probe,
-        // and paired with a large PNG so modern browsers and PWA surfaces get the
-        // real mark instead of a 48px upscale.
+        // Browsers still request /favicon.ico even when a PNG is declared, so that
+        // file has to be the Kochi mark. The previous ico was the Nuxt starter.
+        { rel: 'icon', type: 'image/png', href: '/favicon-32.png', sizes: '32x32' },
         { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
         { rel: 'icon', type: 'image/png', href: '/img/logo/mf-kochi-square-512.png', sizes: '512x512' }
       ]
