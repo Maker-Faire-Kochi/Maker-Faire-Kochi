@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-import { Timer, Shapes, Info } from '@lucide/vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { usePanelSound } from '~/composables/usePanelSound'
 
 /**
- * Floating glass pill rail — the site's only navigation.
+ * Pinned title strip — the site's only navigation. It docks along the bottom
+ * of the viewport on the page's own grid and names the sheet being read.
  *
  * Replaces the old sticky bordered top bar *and* its hamburger drawer. A bottom
  * bar is the correct primary-nav pattern on phones, so one component now serves
@@ -39,12 +40,20 @@ import { Timer, Shapes, Info } from '@lucide/vue'
  * highlighted while the reader was actually in the countdown.
  */
 const links = [
-  { id: 'about', href: '#about', label: 'About', icon: Info },
-  { id: 'categories', href: '#categories', label: 'Domains', icon: Shapes },
-  { id: 'countdown', href: '#countdown', label: 'When', icon: Timer },
+  { id: 'about', href: '#about', label: 'About', sheet: '01' },
+  { id: 'categories', href: '#categories', label: 'Domains', sheet: '02' },
+  { id: 'countdown', href: '#countdown', label: 'When', sheet: '03' },
 ]
 
 const activeId = ref<string>('')
+
+/** The hero is sheet 00, the general arrangement, before any link is reached. */
+const sheet = computed(() => {
+  const l = links.find(x => x.id === activeId.value)
+  return l ? { n: l.sheet, label: l.label } : { n: '00', label: 'General arrangement' }
+})
+
+const { enabled: soundOn, toggle: toggleSound } = usePanelSound()
 
 /**
  * Active-section tracking.
@@ -98,21 +107,33 @@ onUnmounted(() => {
 <template>
   <div class="rail-wrap">
     <nav id="primary-nav" class="rail" aria-label="Primary">
-      <a
-        v-for="l in links"
-        :key="l.id"
-        :href="l.href"
-        class="pill"
-        :class="{ 'is-active': activeId === l.id }"
-        :aria-current="activeId === l.id ? 'location' : undefined"
-        :aria-label="l.label"
-      >
-        <component :is="l.icon" class="pill-icon" :size="18" :stroke-width="2" aria-hidden="true" />
-        <span class="pill-label">{{ l.label }}</span>
-        <span v-if="activeId === l.id" class="pill-dot" aria-hidden="true"></span>
-      </a>
+      <p class="rail-sheet" aria-hidden="true">
+        <span>Sht {{ sheet.n }} / 04</span>
+        <span class="rail-sheet-label">{{ sheet.label }}</span>
+      </p>
 
-      <a href="/interestform" class="pill pill-cta">Get Involved</a>
+      <div class="rail-keys">
+        <a
+          v-for="l in links"
+          :key="l.id"
+          :href="l.href"
+          class="key rail-key"
+          :class="{ 'is-lit': activeId === l.id }"
+          :aria-current="activeId === l.id ? 'location' : undefined"
+        >{{ l.label }}</a>
+
+        <a href="/interestform" class="key key-red rail-key rail-cta">Get Involved</a>
+
+        <button
+          type="button"
+          class="key rail-key rail-sound"
+          :class="{ 'is-on': soundOn }"
+          role="switch"
+          :aria-checked="soundOn"
+          aria-label="Key sounds"
+          @click="toggleSound"
+        >Sound {{ soundOn ? 'on' : 'off' }}</button>
+      </div>
     </nav>
   </div>
 </template>
@@ -122,184 +143,120 @@ onUnmounted(() => {
   position: fixed;
   left: 0;
   right: 0;
-  /* Positioned, not padded — padding the rail would not clear the home indicator. */
-  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  bottom: 0;
   z-index: 120;
-  display: flex;
-  justify-content: center;
-  /* A full-width fixed wrapper would otherwise swallow every click in its band. */
-  pointer-events: none;
 }
 
+/* Docked on the page grid: the sheet name over the narrow bay, the keys from
+   the column line. One hairline on top; the dividers are the keys' own. */
 .rail {
-  pointer-events: auto;
+  display: grid;
+  grid-template-columns: var(--pn-grid);
+  /* border-box: the safe-area padding counts toward min-height, so it has to
+     be added here too or an iPhone home indicator crushes the keys. */
+  min-height: calc(var(--rail-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background-color: var(--pn-enamel);
+  border-top: 2px solid var(--pn-ink);
+}
+
+.rail-sheet {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem;
-  min-height: var(--rail-h);
-  max-width: calc(100vw - 2rem);
-  /* Added pills, 200% zoom and large text degrade to a scrollable rail
-     instead of overflowing the viewport. */
-  overflow-x: auto;
-  scrollbar-width: none;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--glass-stroke);
-  background: var(--glass-bg);
-  box-shadow: var(--shadow-soft-lg);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-}
-
-.rail::-webkit-scrollbar {
-  display: none;
-}
-
-/* Test BOTH forms: an unprefixed-only query misclassifies prefix-only Safari. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .rail {
-    background: rgba(255, 255, 255, 0.94);
-  }
-}
-
-.pill {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  /* HIG minimum control size. */
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 1rem;
-  flex: 0 0 auto;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-  color: var(--color-ink);
+  gap: 1.25rem;
+  padding: 0 var(--pn-gutter);
+  font-family: var(--font-readout);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-ink);
   white-space: nowrap;
-  transition: background-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
+  overflow: hidden;
 }
 
-.pill:hover {
-  background-color: var(--color-surface);
-  transform: translateY(-1px);
+.rail-sheet-label {
+  color: var(--pn-label);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.pill:focus-visible {
-  outline: 2px solid var(--color-ink);
-  outline-offset: 2px;
+.rail-keys {
+  display: flex;
+  align-items: stretch;
+  border-left: 1px solid var(--pn-ink);
 }
 
-/* Active state changes shape AND weight, never colour alone — so it survives
-   colour blindness. */
-.pill.is-active {
-  background-color: var(--color-surface);
+.rail-key {
+  min-height: 0;
+  padding: 0.85rem 1.5rem 0.7rem;
+  border: 0;
+  border-right: 1px solid var(--pn-ink);
+  box-shadow: none;
+  font-size: 0.9375rem;
+  white-space: nowrap;
 }
 
-.pill-cta {
-  background-color: var(--color-red-cta);
-  color: var(--color-white);
-}
-.pill-cta:hover {
-  background-color: var(--color-red-cta);
-  filter: brightness(0.95);
-  transform: translateY(-1px);
-}
-.pill-cta .pill-label {
-  color: inherit;
+.rail-key:active,
+.rail-key.is-down {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
-.pill-dot {
-  position: absolute;
-  bottom: 5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
+.rail-key::before {
+  top: 6px;
+  left: 1.5rem;
+  width: 1rem;
+  height: 2px;
+}
+
+.rail-cta {
+  margin-left: auto;
+  border-left: 1px solid var(--pn-ink);
+}
+
+.rail-sound {
+  border-right: 0;
+}
+
+.rail-sound.is-on::before {
   background-color: var(--color-cyan);
 }
 
-.pill-icon {
-  flex-shrink: 0;
-}
-
-@media (max-width: 480px) {
-  /* Labels stay VISIBLE. An earlier version clipped them to icon-only here, but
-     320px is also the reflow width a sighted low-vision user lands on at 200%
-     zoom — clipping penalises exactly the people who zoomed, and aria-label only
-     helps assistive tech, not them. A lone "Shapes" glyph for "Domains" is not
-     guessable.
-
-     A hidden horizontal scrollbar is the same failure: four labelled pills do
-     not fit a 320–390px rail (measured overflow 70px at 390), and
-     scrollbar-width: none gives no hint that "Get Involved" is off to the
-     right. Stack icon over label in equal columns so every item is on screen.
-     "Get Involved" wraps on the space; do not nowrap it back into a scroll. */
-  :global(:root) {
-    /* Measured 72px at 320 and 390. Hero, footer and scroll-padding read this
-       token, so a taller phone rail stays clear of the buttons. */
-    --rail-h: 72px;
-  }
-
-  .rail-wrap {
-    bottom: calc(0.625rem + env(safe-area-inset-bottom));
-  }
-
+@media (max-width: 900px) {
   .rail {
-    width: calc(100vw - 1rem);
-    max-width: none;
-    gap: 0.125rem;
-    padding: 0.25rem;
-    overflow: visible;
-    justify-content: stretch;
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .pill {
+  .rail-sheet {
+    display: none;
+  }
+
+  .rail-keys {
+    border-left: 0;
+  }
+
+  .rail-key {
     flex: 1 1 0;
-    flex-direction: column;
-    gap: 0.125rem;
+    justify-content: center;
     min-width: 0;
-    min-height: 56px;
-    padding: 0.3rem 0.2rem;
-    font-size: 0.6875rem;
-    letter-spacing: 0;
-    line-height: 1.15;
-    text-align: center;
+    padding: 0.85rem 0.25rem 0.7rem;
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
     white-space: normal;
-  }
-
-  .pill-icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .pill-cta {
-    /* Wider than the word columns so "Get Involved" stays one line inside the
-       pill ends. Equal shares at 320px left the label 3px from each cap. */
-    flex-grow: 1.45;
-    padding-inline: 0.45rem;
+    text-align: center;
     line-height: 1.15;
   }
-}
 
-@media (max-width: 768px) {
-  /* Blur over a playing video re-samples every frame. Both properties must be
-     cleared or prefix-only iOS Safari keeps paying for it. */
-  .rail {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    background: rgba(255, 255, 255, 0.94);
+  .rail-key::before {
+    left: 50%;
+    transform: translateX(-50%);
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .pill {
-    transition: none;
+  .rail-cta {
+    flex-grow: 1.5;
+    margin-left: 0;
+    border-left: 0;
   }
 }
 </style>

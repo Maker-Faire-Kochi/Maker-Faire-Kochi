@@ -14,11 +14,18 @@ import { CONTACT_EMAIL, INSTAGRAM_URL } from '~/composables/useCountdown'
  * it (see MakerHeader.vue) -- that logic existed solely because this input sat
  * under a fixed bottom rail on phones.
  */
+const sheets = [
+  { n: '00', label: 'General arrangement', href: '#top' },
+  { n: '01', label: 'About', href: '#about' },
+  { n: '02', label: 'Domains', href: '#categories' },
+  { n: '03', label: 'When', href: '#countdown' },
+]
 </script>
 
 <template>
-  <footer class="maker-footer">
-    <div class="container footer-container">
+  <footer class="maker-footer enamel">
+    <SheetHead n="04" label="Colophon" />
+    <div class="footer-container">
       <div class="footer-top">
         <div class="footer-brand-column">
           <!-- The real lockup, not a Bungee approximation of it. This was
@@ -50,11 +57,11 @@ import { CONTACT_EMAIL, INSTAGRAM_URL } from '~/composables/useCountdown'
                brand icons (Instagram, Twitter and Youtube are simply not
                exported). Mail is a Lucide icon, so the two match in weight. -->
           <div class="social-links">
-            <a :href="INSTAGRAM_URL" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Maker Faire Kochi on Instagram">
+            <a :href="INSTAGRAM_URL" target="_blank" rel="noopener noreferrer" class="social-link">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -67,230 +74,257 @@ import { CONTACT_EMAIL, INSTAGRAM_URL } from '~/composables/useCountdown'
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                 <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
               </svg>
+              Instagram
             </a>
-            <a :href="`mailto:${CONTACT_EMAIL}`" class="social-icon" aria-label="Email Maker Faire Kochi">
-              <Mail :size="20" :stroke-width="2" aria-hidden="true" />
+            <a :href="`mailto:${CONTACT_EMAIL}`" class="social-link">
+              <Mail :size="16" :stroke-width="2" aria-hidden="true" />
+              Email
             </a>
           </div>
         </div>
 
-        <div class="footer-links-column">
-          <h4 class="column-title subhead">Quick Links</h4>
-          <ul class="link-list">
-            <li><a href="#about" class="footer-link">About the Event</a></li>
-            <li><a href="#categories" class="footer-link">Exhibition Themes</a></li>
-            <li><a href="#countdown" class="footer-link">Countdown status</a></li>
-            <li><a href="/interestform" class="footer-link">Get Involved</a></li>
-          </ul>
-        </div>
+        <nav class="footer-links-column" aria-labelledby="sheet-index">
+          <h4 id="sheet-index" class="column-title">Sheet index</h4>
+          <ol class="link-list">
+            <li v-for="s in sheets" :key="s.n">
+              <a :href="s.href" class="footer-link"><span class="sheet-n" aria-hidden="true">{{ s.n }}</span>{{ s.label }}</a>
+            </li>
+          </ol>
+        </nav>
 
         <!-- Replaces the newsletter column. With the proposal CTAs removed there
              was otherwise NO way to contact the faire anywhere on the site. -->
         <div class="footer-contact-column">
-          <h4 class="column-title subhead">Contact</h4>
+          <h4 class="column-title">Contact</h4>
           <a :href="`mailto:${CONTACT_EMAIL}`" class="contact-email">{{ CONTACT_EMAIL }}</a>
+
+          <dl class="colophon">
+            <div>
+              <dt>Drawn by</dt>
+              <dd>The Kochi Maker Community</dd>
+            </div>
+          </dl>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <div class="legal-text">
-          <p>© 2027 Maker Faire Kochi. All rights reserved.</p>
-          <p class="trademark-text">
-            Maker Faire is a registered trademark of Make Community LLC. Maker Faire Kochi is independently organized and operated under license from Make Community LLC.
-          </p>
-        </div>
-        <div class="credits">
-          Made with ❤️ by the <span class="highlight">Kochi Maker Community</span>
-        </div>
+        <p class="credits">© 2027 Maker Faire Kochi. All rights reserved.</p>
+        <p class="legal-text">
+          Maker Faire is a registered trademark of Make Community LLC. Maker Faire Kochi is independently organized and operated under license from Make Community LLC.
+        </p>
       </div>
     </div>
   </footer>
 </template>
 
 <style scoped>
-/* Charcoal, not ink. The countdown section directly above is ink, and two
-   identical dark grounds stacked read as one slab with a heading floating in
-   the middle of it. #1F1F1F against #292929 is a quiet but real step. */
+/* The sheet's title block: ruled cells on the page's own column line. */
+.maker-footer,
+.maker-footer p {
+  font-family: var(--font-readout);
+}
+
 .maker-footer {
-  background-color: var(--color-charcoal);
-  color: var(--label-on-dark);
-  border-top: 1px solid var(--separator-on-dark);
-  padding: 5rem 0 3rem 0;
-  padding-bottom: calc(var(--rail-h) + 2rem + env(safe-area-inset-bottom));
-  font-family: var(--font-body);
-}
-
-.footer-top {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr 1fr;
-  gap: 4rem;
-  border-bottom: 1px solid var(--separator-on-dark);
-  padding-bottom: 4rem;
-  margin-bottom: 2.5rem;
+  grid-template-columns: var(--pn-grid);
+  /* Ends exactly on the pinned strip, which closes the last row. */
+  padding-bottom: calc(var(--rail-h) + env(safe-area-inset-bottom));
+  color: var(--pn-ink);
 }
 
-/* The mark carries its own white plaque and cyan frame, so it needs no colour
-   handling on the dark ground -- and the whole --color-red vs --color-red-on-dark
-   question that the old typeset version raised simply goes away with it. */
+.maker-footer :deep(.sheet-head) {
+  margin-bottom: 0;
+}
+
+.footer-container {
+  grid-column: 1 / -1;
+}
+
+.footer-top,
+.footer-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* Same rule as every table above: the wide bay's first cell starts ON the
+   column line, and only the cells after it are ruled off. */
+.footer-top > *,
+.footer-bottom > * {
+  padding: 2.5rem var(--pn-gutter) 2.5rem 0;
+}
+
+.footer-top > .footer-brand-column,
+.footer-bottom > .credits {
+  padding-left: var(--pn-gutter);
+}
+
+
+
+.footer-bottom {
+  border-top: 1px solid var(--pn-ink);
+}
+
 .footer-logo {
   display: block;
-  width: 216px;
+  width: 200px;
   max-width: 100%;
   height: auto;
-  margin-bottom: var(--sp-4);
+  margin-bottom: 1.5rem;
 }
 
 .brand-desc {
-  font-size: 0.95rem;
-  color: var(--label-secondary-on-dark);
-  line-height: 1.6;
+  max-width: 32ch;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--pn-label);
   margin-bottom: 1.5rem;
 }
 
 .social-links {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
-/* Kept as the literal X / IG / YT strings rather than swapped for icons:
-   @lucide/vue ships no brand glyphs (verified -- Twitter, Instagram and
-   Youtube are simply not exported), and inventing lookalikes would be worse
-   than plain initials. Sized to a real 44px target instead. */
-.social-icon {
-  /* 44px is the control-size floor; there is no separate width/height, because
-     a 40px width under a 44px min-width is just a confusing way to write 44. */
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
+.social-link,
+.footer-link,
+.contact-email {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-white);
-  /* INK, not charcoal. This chip used to be charcoal on an ink footer; the
-     footer is charcoal now, so charcoal-on-charcoal would have erased it.
-     Ink is the lighter of the two, so the step survives the swap. */
-  background-color: var(--color-ink);
-  color: var(--color-white);
-  transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+  gap: 0.5rem;
+  min-height: 44px;
+  color: var(--pn-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+  transition: text-decoration-color var(--dur-fast) linear;
 }
 
-.social-icon:hover {
-  transform: translateY(-2px);
-  background-color: var(--color-cyan);
-  border-color: var(--color-cyan);
-  color: var(--color-dark);
+.social-link {
+  font-family: var(--font-readout);
+  font-weight: 500;
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-/* Links column */
-/* Was Bungee at 1.2rem in cyan. Three cyan display headings made the accent do
-   structural work; as sentence-case subheads they rank by weight instead, and
-   cyan is left for the small rule that marks the column. */
 .column-title {
-  position: relative;
-  margin-bottom: var(--sp-4);
-  padding-bottom: var(--sp-2);
-  color: var(--label-on-dark);
-}
-
-/* The accent, as a mark beside the words instead of the words themselves. */
-.column-title::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 24px;
-  height: 2px;
-  background-color: var(--color-cyan);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--pn-ink);
+  font-family: var(--font-readout);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
 }
 
 .link-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+}
+
+.link-list {
+  margin-top: -0.75rem;
+}
+
+.link-list li {
+  border-bottom: 1px solid var(--pn-ink);
 }
 
 .footer-link {
-  color: var(--label-secondary-on-dark);
-  font-size: 1rem;
-  transition: color var(--transition-fast);
-  font-family: var(--font-mono);
+  display: flex;
+  gap: 1rem;
+  font-size: 1.125rem;
+  text-decoration-color: transparent;
+}
+
+.sheet-n {
+  width: 1.6rem;
+  color: var(--pn-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.colophon {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.colophon dt {
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pn-label);
+}
+
+.colophon dd {
+  margin: 0.3rem 0 0;
+  font-size: 1.125rem;
+  color: var(--pn-ink);
 }
 
 .footer-link:hover {
-  color: var(--color-cyan);
-  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 
-/* Contact column */
-/* The rule is text-decoration, NOT border-bottom. A border sits at the bottom
-   of the BOX, and the 44px minimum target makes that box far taller than the
-   text -- so the underline detached and floated well below the address. An
-   underline with an offset hugs the glyphs however tall the hit area is. */
 .contact-email {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  font-family: var(--font-mono);
+  font-family: var(--font-readout);
   font-size: 1rem;
-  color: var(--label-secondary-on-dark);
-  text-decoration: underline;
-  text-underline-offset: 0.25em;
-  text-decoration-thickness: 1px;
-  transition: color var(--transition-fast);
-  /* An email address is one long unbroken token; without this it overflows the
-     column at narrow widths instead of wrapping. */
   overflow-wrap: anywhere;
 }
 
-.contact-email:hover {
-  color: var(--color-cyan);
+.footer-bottom {
+  font-size: 1.125rem;
+  color: var(--pn-label);
 }
 
-/* Footer Bottom */
-.footer-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 3rem;
-  font-size: 0.85rem;
-  color: var(--color-muted-on-dark);
+.legal-text,
+.credits {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--pn-label);
 }
 
 .legal-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 70%;
-}
-
-.trademark-text {
-  font-size: 0.75rem;
-  line-height: 1.4;
+  grid-column: 2 / -1;
+  grid-row: 1;
+  max-width: 80ch;
 }
 
 .credits {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  white-space: nowrap;
+  grid-column: 1;
+  grid-row: 1;
 }
 
-.credits .highlight {
-  color: var(--color-cyan);
-}
-
-@media (max-width: 992px) {
-  .footer-top {
-    grid-template-columns: 1fr;
-    gap: 3rem;
+@media (max-width: 900px) {
+  .maker-footer {
+    grid-template-columns: minmax(0, 1fr);
   }
-  
+
+  .footer-top,
   .footer-bottom {
-    flex-direction: column;
-    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr);
   }
-  
-  .legal-text {
-    max-width: 100%;
+
+  .footer-top > *,
+  .footer-bottom > *,
+  .footer-top > .footer-brand-column,
+  .footer-bottom > .credits {
+    padding: 2rem 1.25rem;
+  }
+
+  .footer-top > * + *,
+  .footer-bottom > .credits {
+    border-top: 1px solid var(--pn-ink);
+  }
+
+  .legal-text,
+  .credits {
+    grid-column: 1;
+    grid-row: auto;
   }
 }
 </style>

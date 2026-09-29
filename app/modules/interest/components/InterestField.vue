@@ -26,10 +26,10 @@ defineProps<{
   margin-bottom: 1.25rem;
 }
 .at-label {
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--color-ink);
+  line-height: 1.4;
+  color: var(--pn-ink);
 }
 .at-req {
   color: var(--color-red-cta);
@@ -37,8 +37,8 @@ defineProps<{
 }
 .at-hint {
   margin: 0;
-  font-size: 0.8125rem;
-  color: var(--color-muted);
+  font-size: 1rem;
+  color: var(--pn-label);
   line-height: 1.4;
 }
 </style>

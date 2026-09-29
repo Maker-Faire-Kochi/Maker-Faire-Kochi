@@ -2,8 +2,55 @@
 
 Nuxt 4 / Vue 3 single-page site. No test runner.
 
-The hero is a **live inline SVG scene** built from Open Peeps (CC0) — there is no hero
-video. See "The hero is a live vector scene" below before touching it.
+## Current design: "control panel / drawing sheet" (2026-09)
+
+**The hero is now `app/components/hero/MakerSchematic.vue`, NOT `HeroScene.server.vue`.**
+The Open Peeps scene and its `remotion/` pipeline are no longer rendered anywhere
+(`HeroScene.server.vue` is still on disk but unreferenced). Everything under "The hero is a live
+vector scene" below documents that retired scene — read it as history, not as live rules.
+
+- **Palette is the favicon only:** red, cyan, white, plus black (`--pn-ink`), on white
+ dot-grid paper. The CLAUDE.md contrast rules still apply: cyan is never text on white, and
+ cyan *labels* use `#0077A8` (5.0:1) instead, e.g. `.a-fig`.
+- **Type:** Archivo (`--font-panel`, condensed via `font-stretch: 62%`) for display, IBM Plex
+ Mono (`--font-readout`) for body/labels. Buttons are `.key` / `.key-red` (tactile, 60ms press).
+- **MakerSchematic is interactive.** Five machines (cheena vala, drone, treadle sewing machine,
+ charkha & wool, robot arm) are `role="button"` groups; click/Enter runs a one-shot
+ `.is-running` animation plus a WebAudio sound from `playMachine()` in `usePanelSound.ts`.
+ The robot arm stays parked until it is clicked. That click starts two-link IK
+ (reactive `transform` attributes, rAF lerp) and closes the gripper; a second
+ click, or eight seconds without a pointer move, parks it at rest. While it
+ tracks, the target is clamped to `REACH` in the arm's own drawing, so the gripper
+ stays to the right of the charkha. Unclamped, it tracked the pointer across the whole hero and
+ swung over the charkha and sewing machine. Kerala set pieces: one coconut palm (built by
+ `palm()`; item `11` is a button that drops a nut to the ground), plus hanging
+ counterweight stones and a lantern on the cheena vala. Idle motion is gated by `.hero-stage.is-ready`, paused by
+ `.is-offscreen`, and removed by `prefers-reduced-motion`. Keep the viewBox origin at `0 0`:
+ parts rotate with `transform-box: view-box; transform-origin: 0 0` inside `translate()` groups.
+- **React Bits are hand-ported to Vue** in `app/components/bits/` (auto-imported as `Bits*`):
+ `SplitText`, `DecryptedText`, `CountUp`, `ClickSpark`. No React dependency was added.
+ All SSR-render final text (SEO / no-JS safe), and all skip under reduced motion.
+- **`PageLoader.vue`** is CSS-only (no JS gate), `pointer-events: none`, lifts at ~950ms.
+ Hero entrance delays (1050–1800ms) are tuned to it — move them together.
+- **Scroll reveal** lives in `pages/index.vue`; `.reveal` is added by JS only, and only to
+ elements below the fold, so no-JS visitors and the first screen never start hidden.
+- **`--rail-h` is 58px** now (the nav keys grew with the reading type).
+- **A reload always starts at the top** (`plugins/scroll-top.client.ts`: manual
+ `scrollRestoration`, hash stripped, `scrollTo(0,0)` on mount and first `page:finish`).
+- **The sheet stacks below 900px wide, and also below 520px tall** (a landscape
+ iPhone is wider than 900). The parts list uses `auto-fit` so its labels wrap
+ inside the key cell. Form and admin fields are 16px so iOS does not zoom on focus.
+- **The backwater is ONE clipped body** (`#sch-water-clip`, x 0–214): a filled surface that
+ slides exactly one wave period (40 units) per loop, plus dashed currents on `stroke-dashoffset`.
+ Keep the wave path extending ≥ 40 units past both clip edges or the loop shows a gap.
+- **Admin** uses the same language: `layouts/admin.vue` defines the shared unscoped
+ `.a-panel / .a-head / .a-fig / .a-title / .a-meta / .a-empty` classes used by every chart in
+ `modules/admin/components/` (`AdminLineChart`, `AdminDonut`, `AdminHeatmap`,
+ `AdminPipeline`, `AdminSparkline`, `AdminBarChart` — whose `fig` prop is required). Metrics
+ come from `useInterestAnalytics.ts` (`series14/30`, `weekCompare`, `heatmap`, `pipeline`,
+ `combos`, `depth`, ...). The heatmap uses the viewer's local time, like the day series.
+ Sparklines use `preserveAspectRatio="none"`, so their end dot is a round-capped
+ zero-length stroke; a `<circle>` stretches into an oval.
 
 ## Run
 
@@ -689,6 +736,11 @@ now closes the page, where it is a call to act.
   eats 2 × 1.5rem, leaving 272px; `auto-fit` then seats four columns with ~13px to spare.
   **4.5rem drops 320px to a 3 + 1 orphan** — the exact failure this layout exists to prevent.
   Re-check 320px, 150% and 200% if you touch it.
+
+  Reading labels are 14px now. "MINUTES" and "SECONDS" need about 65px, and four cells at
+  320px leave about 54px, so those words clipped. Under 400px the grid uses
+  `minmax(8.5rem, 1fr)` instead: two equal columns at normal text, one column at 200%
+  because the minimum grows with rem. Leave 3.75rem in place above 400px.
 
   **The dividers are the 1px grid GAPS**, with the container painting `--separator-on-dark`
   and each cell painting `--color-charcoal` over it. A `border-left` per cell cannot survive

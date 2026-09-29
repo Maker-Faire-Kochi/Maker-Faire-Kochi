@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { Hammer, Users, Sparkles } from '@lucide/vue'
-
 /**
- * Three equal icon+heading+text cards was the page's structure here. Cards are
- * the lazy container: they flatten three different invitations into one shape
- * and let the section carry no hierarchy at all. This is a hairline-separated
- * editorial stack instead — same content, real rhythm, and it collapses to a
- * single column without the card chrome fighting it.
+ * The three invitations are a schedule: one ruled row each, under column
+ * heads, ending on its own key.
  */
 const invitations = [
   {
-    icon: Hammer,
     title: 'Exhibit your project',
     body: 'Whether you built a giant metal dragon, a smart IoT farm system, or beautiful upcycled art — we want you to show it.',
     href: '/interestform',
@@ -18,7 +12,6 @@ const invitations = [
     external: false,
   },
   {
-    icon: Users,
     title: 'Learn and connect',
     body: 'Meet developers, hardware designers, crafters and educators. Share knowledge, tools and ideas.',
     href: '#countdown',
@@ -26,7 +19,6 @@ const invitations = [
     external: false,
   },
   {
-    icon: Sparkles,
     title: 'Inspire the next lot',
     body: 'Bring your kids and family for hands-on workshops, live demos, robotics leagues and interactive science.',
     href: '#categories',
@@ -34,281 +26,356 @@ const invitations = [
     external: false,
   },
 ]
+
+const stats = [
+  { to: 40, suffix: '+', label: 'Countries Hosting' },
+  { to: 150, suffix: '+', label: 'Annual Faires' },
+  { to: 1.5, decimals: 1, suffix: 'M+', label: 'Annual Attendees' },
+  { to: 2006, from: 1990, label: 'Year Established' },
+]
 </script>
 
 <template>
-  <section id="about" class="about-section section-padding">
-    <div class="container">
-      <div class="about-grid">
-        <div class="about-text-area">
-          <h2 class="section-title display-type">What is Maker Faire?</h2>
-          <p class="lead-text">
-            Maker Faire is the Greatest Show (and Tell) on Earth—a family-friendly festival of invention, creativity, and resourcefulness.
-          </p>
-          <p class="body-text">
-            A gathering of curious people who like learning and love showing what
-            they can do — engineers and embroiderers, science clubs and cooks,
-            hobbyists and hard-headed tinkerers.
-          </p>
-          <p class="body-text">
-            We call it a <strong>celebration of the Maker Movement</strong>: a place
-            where hands-on learning meets whatever comes next, and where anyone can
-            find out what it feels like to make a thing from scratch.
-          </p>
+  <section id="about" class="about-section enamel">
+    <SheetHead n="01" label="About" />
 
-        </div>
+    <h2 class="about-title">What is Maker Faire?</h2>
 
-        <ul class="invitations">
-          <li v-for="item in invitations" :key="item.title" class="invitation">
-            <component :is="item.icon" class="invitation-icon" :size="22" :stroke-width="1.75" aria-hidden="true" />
-            <div class="invitation-body">
-              <h3 class="invitation-title subhead">{{ item.title }}</h3>
-              <p class="invitation-text">{{ item.body }}</p>
-              <a
-                v-if="item.cta"
-                :href="item.href"
-                :target="item.external ? '_blank' : undefined"
-                :rel="item.external ? 'noopener noreferrer' : undefined"
-                class="invitation-link"
-              >{{ item.cta }}</a>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Full-width row of its own. It used to sit at the bottom of the left
-           column, which is most of why that column ran roughly twice the height
-           of the right one. -->
-      <div class="kochi-focus">
-        <h3 class="focus-title subhead">Why Kochi?</h3>
-        <p class="kochi-text">
-          Kochi is the innovation and hardware prototyping capital of Kerala — a
-          thriving ecosystem of incubators, fablabs, maker spaces and design
-          studios. It is also a city that has repaired, adapted and re-rigged
-          borrowed technology for six hundred years. Both of those are the same
-          instinct.
-        </p>
-      </div>
-
-      <!-- Global Impact Stats -->
-      <div class="stats-container">
-        <h3 class="stats-header display-type">The Global Impact of Maker Faire</h3>
-        <!-- One treatment for all four. They previously differed ONLY by a 3px
-             coloured top border while every numeral was already ink, so the
-             colour drew a distinction that meant nothing -- and spent the
-             accent palette to do it. The numeral carries the rank now. -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-number">40+</span>
-            <span class="stat-label">Countries Hosting</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">150+</span>
-            <span class="stat-label">Annual Faires</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">1.5M+</span>
-            <span class="stat-label">Annual Attendees</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">2006</span>
-            <span class="stat-label">Year Established</span>
-          </div>
-        </div>
-      </div>
+    <div class="about-copy">
+      <p class="lead-text">
+        Maker Faire is the Greatest Show (&amp; Tell) on Earth—a family-friendly festival of invention, creativity, and resourcefulness.
+      </p>
+      <p class="body-text">
+        A gathering of curious people who like learning and love showing what
+        they can do — engineers and embroiderers, science clubs and cooks,
+        hobbyists and hard-headed tinkerers.
+      </p>
+      <p class="body-text">
+        We call it a celebration of the Maker Movement: a place
+        where hands-on learning meets whatever comes next, and where anyone can
+        find out what it feels like to make a thing from scratch.
+      </p>
     </div>
+
+    <h3 id="ways-in" class="row-label row-label-ways">Three ways in</h3>
+    <table class="schedule" aria-labelledby="ways-in">
+      <thead>
+        <tr>
+          <th scope="col">Way in</th>
+          <th scope="col">What it means</th>
+          <th scope="col"><span class="visually-hidden">Action</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in invitations" :key="item.title">
+          <th scope="row" class="schedule-title">{{ item.title }}</th>
+          <td class="schedule-text">{{ item.body }}</td>
+          <td class="schedule-action">
+            <a
+              v-if="item.cta"
+              :href="item.href"
+              :target="item.external ? '_blank' : undefined"
+              :rel="item.external ? 'noopener noreferrer' : undefined"
+              class="key"
+            >{{ item.cta }}</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="row-label">Why Kochi?</h3>
+    <p class="kochi-text">
+      Kochi is the innovation and hardware prototyping capital of Kerala — a
+      thriving ecosystem of incubators, fablabs, maker spaces and design
+      studios. It is also a city that has repaired, adapted and re-rigged
+      borrowed technology for six hundred years. Both of those are the same
+      instinct.
+    </p>
+
+    <h3 class="row-label">The Global Impact of Maker Faire</h3>
+    <dl class="stats-bank">
+      <div v-for="s in stats" :key="s.label" class="stat">
+        <dt class="stat-label">{{ s.label }}</dt>
+        <dd class="stat-number">
+          <BitsCountUp :to="s.to" :from="s.from ?? 0" :decimals="s.decimals ?? 0" :suffix="s.suffix ?? ''" />
+        </dd>
+      </div>
+    </dl>
   </section>
 </template>
 
 <style scoped>
-/* The full-bleed 1px ink rule that used to close this section is gone: it
-   belonged to no system and was the only hairline of its kind on the page.
-   Separation from the Domains section comes from the ground change instead. */
 .about-section {
-  background-color: var(--bg-base);
-}
-
-/* Equal columns. It was 1.1fr / 0.9fr with all the prose plus the Kochi panel
-   on the left, so the left ran roughly twice the height of the right and the
-   row read as lopsided. "Why Kochi" now sits in its own full-width row below. */
-.about-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: start;
+  grid-template-columns: var(--pn-grid);
+  padding: 0 0 var(--pn-section);
 }
 
-.section-title {
-  font-size: var(--text-title-1);
-  line-height: var(--text-title-1-lh);
-  margin-bottom: var(--sp-4);
-  color: var(--label);
+.about-title {
+  grid-column: 1;
+  padding: 0 var(--pn-gutter);
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--pn-d2);
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--pn-ink);
 }
 
-/* A pull quote, not three lines of shouting. It was 20.8px of saturated
-   --color-red-cta running three lines deep, which passes contrast (6.09:1) but
-   fights the headline directly above it for the same attention. Red survives as
-   the rule down the left edge — an accent beside the words, which is what the
-   palette reserves it for — while the words themselves are read in ink. */
+.about-copy {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: var(--pn-gutter);
+  padding-right: var(--pn-gutter);
+}
+
 .lead-text {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--color-ink);
-  margin-bottom: 1.5rem;
-  padding-left: 1.25rem;
-  border-left: 3px solid var(--color-red-cta);
+  grid-column: 1 / -1;
+  max-width: 36ch;
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 700;
+  line-height: 1.12;
+  font-size: var(--pn-lead);
+  color: var(--pn-ink);
 }
 
 .body-text {
-  color: var(--color-gray-800);
-  margin-bottom: var(--sp-4);
+  margin-top: 2.5rem;
+  max-width: 40ch;
+  font-family: var(--font-readout);
+  font-size: 1rem;
+  line-height: 1.65;
+  line-height: 1.6;
+  color: var(--pn-ink);
 }
 
-.kochi-focus {
-  margin-top: var(--sp-6);
-  padding: var(--sp-5) 2.25rem;
-  background-color: var(--surface-2);
-  border: 1px solid var(--separator);
-  border-radius: var(--radius-card);
+/* ── Schedule: ruled rows under column heads ────────────────────────────── */
+.row-label-ways {
+  margin-top: 6rem;
 }
 
-/* This is the section's argument, not its footnote. At --color-muted (#5A6169,
-   6.27:1) and 1.1rem it read as fine print under its own heading; --color-gray-800
-   is #3A3F45 at 10.62:1, which is the emphasis the content actually carries. */
-.kochi-text {
-  max-width: 68ch;
-  font-size: 1.15rem;
-  color: var(--color-gray-800);
+.schedule {
+  grid-column: 2;
+  margin: 6rem var(--pn-gutter) 0 0;
+  border-collapse: collapse;
+  font-family: var(--font-readout);
 }
 
-.focus-title {
-  color: var(--label);
-  margin-bottom: var(--sp-2);
-}
-
-/* Invitations — a hairline-separated stack, not a card grid. */
-.invitations {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.invitation {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 1rem;
-  padding: 1.75rem 0;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.invitation:last-child {
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.invitation-icon {
-  /* Not cyan: a 1.75-stroke glyph at #00AEEF on white is 2.53:1, under the 3:1
-     non-text floor and visibly faint. Cyan stays structural on dark grounds. */
-  color: var(--color-ink);
-  margin-top: 0.15rem;
-}
-
-.invitation-title {
-  color: var(--label);
-}
-
-.invitation-text {
-  margin-top: var(--sp-1);
-  font-size: 0.98rem;
-  color: var(--label-secondary);
-}
-
-.invitation-link {
-  display: inline-block;
-  margin-top: 0.85rem;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.85rem;
+.schedule thead th {
+  padding: 0 1.5rem 0.6rem 0;
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-red-cta);
-  border-bottom: 1px solid currentColor;
-  padding-bottom: 1px;
+  text-align: left;
+  color: var(--pn-label);
+  border-bottom: 1px solid var(--pn-ink);
 }
 
-.invitation-link:hover {
-  color: var(--color-ink);
+.schedule tbody th,
+.schedule td {
+  padding: 1.25rem 1.5rem 1.25rem 0;
+  vertical-align: top;
+  text-align: left;
+  border-bottom: 1px solid var(--pn-ink);
 }
 
-/* Global Stats Section */
-.stats-container {
-  margin-top: var(--sp-6);
-  padding-top: var(--sp-6);
-  border-top: 1px solid var(--separator);
+.schedule-title {
+  width: 30%;
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  color: var(--pn-ink);
 }
 
-.stats-header {
-  text-align: center;
-  font-size: var(--text-title-2);
-  line-height: var(--text-title-2-lh);
-  margin-bottom: var(--sp-5);
-  color: var(--label);
+.schedule-text {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--pn-ink);
 }
 
-.stats-grid {
+.schedule .schedule-action {
+  padding-right: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* One width for the column, so the keys stack as a bank. */
+.schedule-action .key {
+  width: 12.5rem;
+}
+
+/* ── Sub-sheets: a display title in the narrow bay, content in the wide ── */
+.row-label {
+  grid-column: 1;
+  margin-top: 5rem;
+  padding: 0 var(--pn-gutter);
+  max-width: 14ch;
+  box-sizing: content-box;
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--pn-d3);
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--pn-ink);
+}
+
+.kochi-text {
+  grid-column: 2;
+  margin-top: 5rem;
+  padding-right: var(--pn-gutter);
+  max-width: 44ch;
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 700;
+  line-height: 1.12;
+  font-size: var(--pn-lead);
+  color: var(--pn-ink);
+}
+
+/* A ledger, two columns of ruled lines: label, leader, figure. */
+.stats-bank {
+  grid-column: 2;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--sp-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--pn-gutter);
+  margin: 5rem var(--pn-gutter) 0 0;
+  border-top: 1px solid var(--pn-ink);
 }
 
-/* Four decorations were doing one job here: a 1px ink border, a 3px coloured
-   top border, a shadow and a hover lift. A stat is not interactive, so the
-   lift was a false affordance -- it invited a click that does nothing. One
-   quiet grouped surface, and the numeral does the talking. */
-.stat-card {
-  background-color: var(--surface-2);
-  border: 1px solid var(--separator);
-  padding: var(--sp-5) var(--sp-4);
-  text-align: center;
-  border-radius: var(--radius-card);
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.9rem 0 0.8rem;
+  border-bottom: 1px solid var(--pn-ink);
 }
+
+.stat::after {
+  content: '';
+  order: 1;
+  flex: 1;
+  border-bottom: 1px dotted var(--pn-faint);
+  transform: translateY(-0.3em);
+}
+
+.stat-label { order: 0; }
+.stat-number { order: 2; }
 
 .stat-number {
-  display: block;
-  font-family: var(--font-headline);
-  font-size: clamp(2.5rem, 4.5vw, 3.25rem);
+  font-family: var(--font-panel);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--pn-d3);
   line-height: 1;
-  margin-bottom: var(--sp-2);
-  color: var(--label);
+  color: var(--pn-ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-label {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-lh);
+  font-family: var(--font-readout);
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--label-secondary);
+  color: var(--pn-label);
 }
 
-@media (max-width: 992px) {
-  .about-grid {
-    grid-template-columns: 1fr;
-    gap: 4rem;
+@media (max-width: 1100px) {
+  .schedule,
+  .schedule tbody,
+  .schedule tr,
+  .schedule tbody th,
+  .schedule td {
+    display: block;
   }
-  
-  .stats-container {
-    margin-top: var(--sp-6);
-    padding-top: var(--sp-5);
+
+  .schedule thead {
+    display: none;
+  }
+
+  .schedule {
+    border-top: 1px solid var(--pn-ink);
+  }
+
+  .schedule tr {
+    padding: 1.25rem 0 1.5rem;
+    border-bottom: 1px solid var(--pn-ink);
+  }
+
+  .schedule tbody th,
+  .schedule td {
+    width: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .schedule-text {
+    margin-top: 0.5rem;
+  }
+
+  .schedule .schedule-action {
+    margin-top: 1.25rem;
+    text-align: left;
   }
 }
 
-@media (max-width: 576px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: var(--sp-3);
+@media (max-width: 900px) {
+  .about-section {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 5rem;
+  }
+
+  .about-title,
+  .about-copy,
+  .schedule,
+  .row-label,
+  .kochi-text,
+  .stats-bank {
+    grid-column: 1;
+  }
+
+  .about-title,
+  .row-label {
+    padding: 0 1.25rem;
+  }
+
+  .about-copy {
+    margin-top: 2rem;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 1.25rem;
+  }
+
+  .body-text {
+    margin-top: 1.5rem;
+  }
+
+  .schedule,
+  .stats-bank {
+    margin: 3.5rem 1.25rem 0;
+  }
+
+  .kochi-text {
+    margin-top: 1rem;
+    padding: 0 1.25rem;
+  }
+
+  .stats-bank {
+    margin-top: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .row-label,
+  .row-label-ways {
+    margin-top: 3.5rem;
+  }
+
+  .schedule {
+    margin-top: 1rem;
   }
 }
+
 </style>
