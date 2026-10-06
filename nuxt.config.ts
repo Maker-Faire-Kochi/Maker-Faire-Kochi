@@ -15,6 +15,10 @@ export default defineNuxtConfig({
   routeRules: {
     '/admin': { ssr: false },
     '/admin/**': { ssr: false },
+    // Short link for the media-team volunteer form. Trailing slash is covered
+    // so a typed URL and a bookmarked one both land on the same sheet.
+    '/volunteer': { redirect: { to: 'https://forms.gle/4d6BzBRYSRyT34wE7', statusCode: 302 } },
+    '/volunteer/': { redirect: { to: 'https://forms.gle/4d6BzBRYSRyT34wE7', statusCode: 302 } },
   },
 
   runtimeConfig: {
