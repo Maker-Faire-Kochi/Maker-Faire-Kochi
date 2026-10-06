@@ -4,6 +4,8 @@
 
 - `/interestform` is public. Submissions go through `POST /api/interest`, which validates
   and inserts with the service role. Browsers never write to the table directly.
+- `/volunteer` is the media-team call. The sheet UI posts to `POST /api/volunteer`, which
+  validates and forwards into the Google Form (responses land in that form’s Sheet).
 - `/admin` is for **one account**: the email in `NUXT_ADMIN_OWNER_EMAIL`.
   1. Create that one email/password user in **Supabase Authentication → Users**.
   2. Sign in at `/admin/login` with the same email and password.

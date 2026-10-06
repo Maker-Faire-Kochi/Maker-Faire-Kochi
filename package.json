@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "test:interest": "npx --yes tsx scripts/test-interest-validate.ts"
+    "test:interest": "npx --yes tsx scripts/test-interest-validate.ts",
+    "test:volunteer": "npx --yes tsx scripts/test-volunteer-validate.ts"
   },
   "dependencies": {
     "@lucide/vue": "^1.33.0",

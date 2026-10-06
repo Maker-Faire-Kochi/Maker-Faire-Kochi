@@ -17,6 +17,24 @@
         ],
         "createdAt": "2026-09-24T07:57:13.479Z",
         "reason": "pre-existing .lead-text red rule; CLAUDE.md design invariant, not introduced by interest form"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/error.vue"
+        ],
+        "createdAt": "2026-10-06T18:10:14.628Z",
+        "reason": "Cyan left rule matches InterestForm .at-note already shipped on the site"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/modules/volunteer/components/VolunteerForm.vue"
+        ],
+        "createdAt": "2026-10-06T18:12:26.703Z",
+        "reason": "Matches InterestForm .at-note and checked-choice inset accents already shipped on the site"
       }
     ]
   }

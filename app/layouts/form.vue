@@ -1,7 +1,13 @@
 <script setup lang="ts">
+const route = useRoute()
+
 useHead({
   meta: [{ name: 'theme-color', content: '#FFFFFF' }],
 })
+
+const sheet = computed(() =>
+  route.path.startsWith('/volunteer') ? 'Media volunteer' : 'Interest form',
+)
 </script>
 
 <template>
@@ -10,10 +16,11 @@ useHead({
     <BitsClickSpark selector=".key, .spark" />
     <a href="#form-main" class="skip-link">Skip to form</a>
     <SheetBar
-      sheet="Interest form"
+      :sheet="sheet"
       :links="[
         { href: '/', label: 'Home' },
-        { href: '/interestform', label: 'Form' },
+        { href: '/interestform', label: 'Interest' },
+        { href: '/volunteer', label: 'Volunteer' },
       ]"
     />
     <main id="form-main" tabindex="-1">
