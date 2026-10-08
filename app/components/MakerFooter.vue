@@ -46,7 +46,7 @@ const sheets = [
             />
           </picture>
           <p class="brand-desc">
-            A celebration of the maker movement, bringing engineers, crafters, artists, and innovators together in Kerala.
+            Organised by TinkerHub Foundation and MakerGram. Kerala’s first licensed Maker Faire — a public stage for the people already building in the state’s labs and campuses.
           </p>
           <!-- Was the literal text "X" / "IG" / "YT" in three boxes, pointing at
                twitter.com/makerfaire, instagram.com/makerfaire and
@@ -100,8 +100,8 @@ const sheets = [
 
           <dl class="colophon">
             <div>
-              <dt>Drawn by</dt>
-              <dd>The Kochi Maker Community</dd>
+              <dt>Organised by</dt>
+              <dd>TinkerHub Foundation and MakerGram</dd>
             </div>
           </dl>
         </div>

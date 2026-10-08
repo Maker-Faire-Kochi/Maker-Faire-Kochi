@@ -5,33 +5,33 @@
  */
 const invitations = [
   {
-    title: 'Exhibit your project',
-    body: 'Whether you built a giant metal dragon, a smart IoT farm system, or beautiful upcycled art — we want you to show it.',
+    title: 'Show what you built',
+    body: 'Inventors, engineers, students, hobbyists and hardware builders — bring the project and show how it works.',
     href: '/interestform',
     cta: 'Get involved',
     external: false,
   },
   {
-    title: 'Learn and connect',
-    body: 'Meet developers, hardware designers, crafters and educators. Share knowledge, tools and ideas.',
-    href: '#countdown',
-    cta: 'See the dates',
+    title: 'Learn by building',
+    body: 'Workshops, live demos and the people already making inside Kerala’s labs. Finish something, then share it.',
+    href: '#categories',
+    cta: 'See who fits',
     external: false,
   },
   {
-    title: 'Inspire the next lot',
-    body: 'Bring your kids and family for hands-on workshops, live demos, robotics leagues and interactive science.',
-    href: '#categories',
-    cta: 'Explore what fits',
+    title: 'Come for the two days',
+    body: '26 and 27 January 2027, in Kochi. A public stage for the labs, campuses and workshops that already exist.',
+    href: '#countdown',
+    cta: 'See the dates',
     external: false,
   },
 ]
 
 const stats = [
-  { to: 40, suffix: '+', label: 'Countries Hosting' },
-  { to: 150, suffix: '+', label: 'Annual Faires' },
-  { to: 1.5, decimals: 1, suffix: 'M+', label: 'Annual Attendees' },
-  { to: 2006, from: 1990, label: 'Year Established' },
+  { to: 40, suffix: '+', label: 'Countries' },
+  { to: 200, suffix: '+', label: 'Licensed Faires' },
+  { to: 30, suffix: '+', label: 'Featured Faires a year' },
+  { to: 2006, from: 1990, label: 'Since' },
 ]
 </script>
 
@@ -43,17 +43,13 @@ const stats = [
 
     <div class="about-copy">
       <p class="lead-text">
-        Maker Faire is the Greatest Show (&amp; Tell) on Earth—a family-friendly festival of invention, creativity, and resourcefulness.
+        A festival of invention, creativity and hands-on learning, where people show what they have built.
       </p>
       <p class="body-text">
-        A gathering of curious people who like learning and love showing what
-        they can do — engineers and embroiderers, science clubs and cooks,
-        hobbyists and hard-headed tinkerers.
+        Maker Faire began in the Bay Area in 2006. It is now a network of more than 200 licensed Faires in 40-plus countries. In a typical year that is 30-plus large Featured Faires and 190-plus independently run Mini Faires. The two flagship editions in the United States alone draw over 200,000 people a year.
       </p>
       <p class="body-text">
-        We call it a celebration of the Maker Movement: a place
-        where hands-on learning meets whatever comes next, and where anyone can
-        find out what it feels like to make a thing from scratch.
+        Maker Faire Kochi 2027 brings that licensed platform to Kerala for the first time. It is India’s second Maker Faire city, after Hyderabad. TinkerHub Foundation and MakerGram are organising it. Their team has run and attended Maker Faire Hyderabad (2018, 2019) and Maker Faire Shenzhen (2018, 2023, 2025).
       </p>
     </div>
 
@@ -83,16 +79,40 @@ const stats = [
       </tbody>
     </table>
 
-    <h3 class="row-label">Why Kochi?</h3>
-    <p class="kochi-text">
-      Kochi is the innovation and hardware prototyping capital of Kerala — a
-      thriving ecosystem of incubators, fablabs, maker spaces and design
-      studios. It is also a city that has repaired, adapted and re-rigged
-      borrowed technology for six hundred years. Both of those are the same
-      instinct.
-    </p>
+    <h3 class="row-label">Why Kochi, why now</h3>
+    <div class="wide-copy">
+      <p class="kochi-text">
+        Kerala already has the labs. It does not yet have a public stage where the people building inside them can see each other.
+      </p>
+      <p class="body-text">
+        The state holds roughly 25 to 30 of India’s nearly 98 Fab Foundation network labs, 369 Atal Tinkering Labs, and 28 Centres for Early Innovation, with 70 more planned. No Maker Faire has ever been held in Kerala. Kochi, the state’s innovation and startup hub, is the place to start.
+      </p>
+      <p class="body-text">
+        Each January-to-March season Kerala already hosts two flagship festivals: the Kerala Literature Festival, Asia’s largest literary festival, with over 600,000 visitors, and the Kochi-Muziris Biennale, India’s largest art exhibition. There is no equivalent for technology and making. Maker Faire Kochi is that missing piece, in the same season that already brings visitors and media to the state.
+      </p>
+    </div>
 
-    <h3 class="row-label">The Global Impact of Maker Faire</h3>
+    <h3 class="row-label">The mission</h3>
+    <div class="wide-copy">
+      <p class="kochi-text">
+        Not a one-off weekend. The start of a maker culture that lasts in Kerala.
+      </p>
+      <p class="body-text">
+        The purpose is learning by building: a reason for makers, students and hobbyists to finish a project, show it, and leave with the next one. The Faire gives the Fab Labs, Atal Tinkering Labs and campus communities one shared public moment a year, and a path from a first workshop through incubation and Fab Academy into industry.
+      </p>
+    </div>
+
+    <h3 class="row-label">2027 and beyond</h3>
+    <div class="wide-copy">
+      <p class="kochi-text">
+        2027 is the first of an annual Faire, not the only one.
+      </p>
+      <p class="body-text">
+        In the year leading to Maker Faire Kochi 2028, TinkerHub will run activations across its 70-plus college chapters in Kerala, extend the roadshow into an ongoing multi-city series, and grow a public Kerala Maker Directory. The exhibitor pipeline and the culture keep building between the two days on the ground.
+      </p>
+    </div>
+
+    <h3 class="row-label">The global network</h3>
     <dl class="stats-bank">
       <div v-for="s in stats" :key="s.label" class="stat">
         <dt class="stat-label">{{ s.label }}</dt>
@@ -143,10 +163,11 @@ const stats = [
 }
 
 .body-text {
-  margin-top: 2.5rem;
-  max-width: 40ch;
+  grid-column: 1 / -1;
+  margin-top: 1.5rem;
+  max-width: 62ch;
   font-family: var(--font-readout);
-  font-size: 1rem;
+  font-size: 1.125rem;
   line-height: 1.65;
   line-height: 1.6;
   color: var(--pn-ink);
@@ -222,6 +243,24 @@ const stats = [
   line-height: 0.95;
   text-transform: uppercase;
   color: var(--pn-ink);
+}
+
+.wide-copy {
+  grid-column: 2;
+  margin-top: 5rem;
+  padding-right: var(--pn-gutter);
+  max-width: 62ch;
+}
+
+.wide-copy .kochi-text,
+.wide-copy .body-text {
+  margin-top: 0;
+  padding-right: 0;
+  max-width: none;
+}
+
+.wide-copy .body-text {
+  margin-top: 1.25rem;
 }
 
 .kochi-text {
@@ -333,6 +372,7 @@ const stats = [
   .about-copy,
   .schedule,
   .row-label,
+  .wide-copy,
   .kochi-text,
   .stats-bank {
     grid-column: 1;
@@ -358,6 +398,7 @@ const stats = [
     margin: 3.5rem 1.25rem 0;
   }
 
+  .wide-copy,
   .kochi-text {
     margin-top: 1rem;
     padding: 0 1.25rem;

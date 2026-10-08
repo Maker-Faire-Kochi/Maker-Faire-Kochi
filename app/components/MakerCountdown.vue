@@ -43,7 +43,7 @@ useHead({
         eventStatus: 'https://schema.org/EventScheduled',
         eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
         description:
-          'A family-friendly festival of invention, creativity and resourcefulness. The Greatest Show (& Tell) on Earth comes to Kerala for the first time.',
+          'Kerala’s first licensed Maker Faire. A festival of invention, creativity and hands-on learning in Kochi, 26–27 January 2027. Organised by TinkerHub Foundation and MakerGram.',
         url: origin,
         image: [`${origin}/img/logo/mf-kochi-square-512.png`],
         /**
@@ -75,12 +75,17 @@ useHead({
           validFrom: new Date().toISOString(),
           url: origin,
         },
-        organizer: {
-          '@type': 'Organization',
-          name: 'Maker Faire Kochi',
-          url: origin,
-          email: CONTACT_EMAIL,
-        },
+        organizer: [
+          {
+            '@type': 'Organization',
+            name: 'TinkerHub Foundation',
+            email: CONTACT_EMAIL,
+          },
+          {
+            '@type': 'Organization',
+            name: 'MakerGram',
+          },
+        ],
       }),
     },
   ],
