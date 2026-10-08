@@ -39,13 +39,12 @@ const keyed = new Set(['Robotics & AI', 'Textiles & Weaving', 'Electronics & IoT
   <section id="categories" class="domain-section enamel">
     <SheetHead n="02" label="Domains" />
 
-    <h2 class="domain-claim">There is no domain for makers.</h2>
+    <h2 class="domain-claim">Who are the makers?</h2>
 
     <p class="domain-quote">
-      Everyone is a maker. The aunt who
-      alters every hand-me-down until it fits. The uncle who has repaired the
-      same mixer four times rather than replace it. The neighbour whose kite
-      actually flies. None of them call it making — it is.
+      Inventors, engineers, students, hobbyists and the person who has repaired
+      the same mixer four times. The aunt who alters every hand-me-down. The
+      neighbour whose kite actually flies. If they made it, they belong here.
     </p>
 
     <p class="domain-support">
