@@ -65,13 +65,13 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'theme-color', content: '#FFFFFF' },
-        { name: 'description', content: 'Maker Faire Kochi 2027 is Kerala’s first licensed Maker Faire, 26 and 27 January in Kochi. A festival of invention, creativity and hands-on learning, organised by TinkerHub Foundation and MakerGram.' },
+        { name: 'description', content: 'Maker Faire Kochi 2027 is Kerala’s first licensed Maker Faire, 26 and 27 January in Kochi. Built together by TinkerHub Foundation, MakerGram and Kerala Startup Mission.' },
         { property: 'og:title', content: 'Maker Faire Kochi 2027' },
-        { property: 'og:description', content: 'Who are the makers? Kerala’s first licensed Maker Faire comes to Kochi on 26 and 27 January 2027. Organised by TinkerHub Foundation and MakerGram.' },
+        { property: 'og:description', content: 'Where are the makers? Kerala’s first licensed Maker Faire comes to Kochi on 26 and 27 January 2027. Built together by TinkerHub Foundation, MakerGram and Kerala Startup Mission.' },
         { property: 'og:type', content: 'website' },
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'Maker Faire Kochi 2027' },
-        { name: 'twitter:description', content: 'Kerala’s first licensed Maker Faire. Kochi, 26–27 January 2027. Invention, creativity and hands-on learning.' }
+        { name: 'twitter:description', content: 'Where are the makers? Kerala’s first licensed Maker Faire. Kochi, 26–27 January 2027. Built together by TinkerHub Foundation, MakerGram and KSUM.' }
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

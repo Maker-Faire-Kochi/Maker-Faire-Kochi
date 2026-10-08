@@ -5,22 +5,22 @@
  */
 const invitations = [
   {
-    title: 'Show what you built',
-    body: 'Inventors, engineers, students, hobbyists and hardware builders — bring the project and show how it works.',
+    title: 'Exhibit',
+    body: 'Inventors, engineers, students, hobbyists and hardware startups: present your project and show how it works.',
     href: '/interestform',
     cta: 'Get involved',
     external: false,
   },
   {
-    title: 'Learn by building',
-    body: 'Workshops, live demos and the people already making inside Kerala’s labs. Finish something, then share it.',
+    title: 'Learn',
+    body: 'Hands-on workshops and live demonstrations from makers across Kerala’s labs, campuses and communities.',
     href: '#categories',
     cta: 'See who fits',
     external: false,
   },
   {
-    title: 'Come for the two days',
-    body: '26 and 27 January 2027, in Kochi. A public stage for the labs, campuses and workshops that already exist.',
+    title: 'Visit',
+    body: 'Two days in Kochi, 26 and 27 January 2027. Free and open to the public.',
     href: '#countdown',
     cta: 'See the dates',
     external: false,
@@ -43,13 +43,13 @@ const stats = [
 
     <div class="about-copy">
       <p class="lead-text">
-        A festival of invention, creativity and hands-on learning, where people show what they have built.
+        A global celebration of invention, creativity and hands-on learning.
       </p>
       <p class="body-text">
-        Maker Faire began in the Bay Area in 2006. It is now a network of more than 200 licensed Faires in 40-plus countries. In a typical year that is 30-plus large Featured Faires and 190-plus independently run Mini Faires. The two flagship editions in the United States alone draw over 200,000 people a year.
+        Since its launch in the Bay Area in 2006, Maker Faire has grown into a network of more than 200 licensed events across 40-plus countries, including 30-plus Featured Faires each year. Its two flagship editions in the United States draw over 200,000 visitors annually.
       </p>
       <p class="body-text">
-        Maker Faire Kochi 2027 brings that licensed platform to Kerala for the first time. It is India’s second Maker Faire city, after Hyderabad. TinkerHub Foundation and MakerGram are organising it. Their team has run and attended Maker Faire Hyderabad (2018, 2019) and Maker Faire Shenzhen (2018, 2023, 2025).
+        Maker Faire Kochi is built collectively by TinkerHub Foundation, MakerGram and Kerala Startup Mission, giving Kerala’s labs, campuses and maker communities a shared public stage.
       </p>
     </div>
 
@@ -82,33 +82,33 @@ const stats = [
     <h3 class="row-label">Why Kochi, why now</h3>
     <div class="wide-copy">
       <p class="kochi-text">
-        Kerala already has the labs. It does not yet have a public stage where the people building inside them can see each other.
+        Kerala has the infrastructure for a thriving maker ecosystem. What it lacks is a public stage.
       </p>
       <p class="body-text">
-        The state holds roughly 25 to 30 of India’s nearly 98 Fab Foundation network labs, 369 Atal Tinkering Labs, and 28 Centres for Early Innovation, with 70 more planned. No Maker Faire has ever been held in Kerala. Kochi, the state’s innovation and startup hub, is the place to start.
+        The state is home to roughly 25 to 30 of India’s 98 Fab Foundation network labs, 369 Atal Tinkering Labs and 28 Centres for Early Innovation, with 70 more planned. Kochi, Kerala’s innovation and startup hub, is the natural place to bring that work into public view.
       </p>
       <p class="body-text">
-        Each January-to-March season Kerala already hosts two flagship festivals: the Kerala Literature Festival, Asia’s largest literary festival, with over 600,000 visitors, and the Kochi-Muziris Biennale, India’s largest art exhibition. There is no equivalent for technology and making. Maker Faire Kochi is that missing piece, in the same season that already brings visitors and media to the state.
+        Each January to March, the Kerala Literature Festival and the Kochi-Muziris Biennale draw visitors from across the world. Maker Faire Kochi adds technology and making to that season.
       </p>
     </div>
 
     <h3 class="row-label">The mission</h3>
     <div class="wide-copy">
       <p class="kochi-text">
-        Not a one-off weekend. The start of a maker culture that lasts in Kerala.
+        To build a lasting maker culture in Kerala.
       </p>
       <p class="body-text">
-        The purpose is learning by building: a reason for makers, students and hobbyists to finish a project, show it, and leave with the next one. The Faire gives the Fab Labs, Atal Tinkering Labs and campus communities one shared public moment a year, and a path from a first workshop through incubation and Fab Academy into industry.
+        Maker Faire Kochi celebrates learning by building. It gives makers, students and hobbyists a reason to finish projects and share them, and connects a pathway from first workshop to incubation, Fab Academy and industry.
       </p>
     </div>
 
     <h3 class="row-label">2027 and beyond</h3>
     <div class="wide-copy">
       <p class="kochi-text">
-        2027 is the first of an annual Faire, not the only one.
+        The beginning of an annual tradition.
       </p>
       <p class="body-text">
-        In the year leading to Maker Faire Kochi 2028, TinkerHub will run activations across its 70-plus college chapters in Kerala, extend the roadshow into an ongoing multi-city series, and grow a public Kerala Maker Directory. The exhibitor pipeline and the culture keep building between the two days on the ground.
+        Ahead of Maker Faire Kochi 2028, TinkerHub will activate its 70-plus college chapters across Kerala, expand the roadshow into a multi-city series and grow a public Kerala Maker Directory.
       </p>
     </div>
 

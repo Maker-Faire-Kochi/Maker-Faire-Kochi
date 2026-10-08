@@ -20,6 +20,12 @@ const sheets = [
   { n: '02', label: 'Domains', href: '#categories' },
   { n: '03', label: 'When', href: '#countdown' },
 ]
+
+const builders = [
+  'TinkerHub Foundation',
+  'MakerGram',
+  'Kerala Startup Mission',
+]
 </script>
 
 <template>
@@ -46,7 +52,7 @@ const sheets = [
             />
           </picture>
           <p class="brand-desc">
-            Organised by TinkerHub Foundation and MakerGram. Kerala’s first licensed Maker Faire — a public stage for the people already building in the state’s labs and campuses.
+            Kerala’s first licensed Maker Faire, celebrating invention, creativity and hands-on learning.
           </p>
           <!-- Was the literal text "X" / "IG" / "YT" in three boxes, pointing at
                twitter.com/makerfaire, instagram.com/makerfaire and
@@ -100,8 +106,12 @@ const sheets = [
 
           <dl class="colophon">
             <div>
-              <dt>Organised by</dt>
-              <dd>TinkerHub Foundation and MakerGram</dd>
+              <dt>Collectively building</dt>
+              <dd>
+                <ul class="builder-list">
+                  <li v-for="name in builders" :key="name">{{ name }}</li>
+                </ul>
+              </dd>
             </div>
           </dl>
         </div>
@@ -264,6 +274,16 @@ const sheets = [
   margin: 0.3rem 0 0;
   font-size: 1.125rem;
   color: var(--pn-ink);
+}
+
+.builder-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.builder-list li + li {
+  margin-top: 0.35rem;
 }
 
 .footer-link:hover {

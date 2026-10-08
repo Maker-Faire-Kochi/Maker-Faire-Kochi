@@ -41,9 +41,9 @@ async function onSubmit(e: Event) {
       <p class="at-sheet">Sht 04 · Interest</p>
       <h1 class="at-title">Get <span class="at-title-accent">Involved</span></h1>
       <p class="at-lede">
-        Maker Faire Kochi is Kerala’s first licensed Maker Faire: a place to finish
-        something, show it, and meet the people already building in the state’s labs
-        and campuses. Tell us how you’d like to be part of it.
+        Maker Faire Kochi is Kerala’s first licensed Maker Faire, built collectively by
+        TinkerHub Foundation, MakerGram and Kerala Startup Mission. Tell us how you
+        would like to take part.
       </p>
       <p class="at-note">
         This is an interest form, not registration. We'll follow up when the next step opens.

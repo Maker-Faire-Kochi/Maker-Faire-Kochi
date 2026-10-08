@@ -39,18 +39,18 @@ const keyed = new Set(['Robotics & AI', 'Textiles & Weaving', 'Electronics & IoT
   <section id="categories" class="domain-section enamel">
     <SheetHead n="02" label="Domains" />
 
-    <h2 class="domain-claim">Who are the makers?</h2>
+    <h2 class="domain-claim">Where are the makers?</h2>
 
     <p class="domain-quote">
-      Inventors, engineers, students, hobbyists and the person who has repaired
-      the same mixer four times. The aunt who alters every hand-me-down. The
-      neighbour whose kite actually flies. If they made it, they belong here.
+      In Fab Labs, tinkering labs, campus chapters, startups and home
+      workshops. Makers work across every discipline, from electronics and
+      robotics to textiles, food and craft.
     </p>
 
     <p class="domain-support">
       <span class="domain-note" aria-hidden="true">Note</span>
-      This is not a technology fair. Solder is welcome; so are dough, thread,
-      clay, coir and wood. If you made it, you can show it.
+      Technology is one part of making. Projects in wood, thread, clay, coir
+      and food are equally welcome.
     </p>
 
     <!-- A schedule, not a menu: plain numbered rows, not controls; they
@@ -69,9 +69,9 @@ const keyed = new Set(['Robotics & AI', 'Textiles & Weaving', 'Electronics & IoT
     </div>
 
     <div class="domain-banner">
-      <h3 class="domain-banner-title">So bring the thing that doesn't fit.</h3>
+      <h3 class="domain-banner-title">Have a project to share?</h3>
       <p class="domain-banner-text">
-        Tell us what you made, how you made it, and what broke on the way.
+        Tell us what you are building and how you would like to take part.
       </p>
       <a href="/interestform" class="key key-red domain-banner-cta">Get Involved</a>
     </div>

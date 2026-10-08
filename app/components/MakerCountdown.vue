@@ -43,7 +43,7 @@ useHead({
         eventStatus: 'https://schema.org/EventScheduled',
         eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
         description:
-          'Kerala’s first licensed Maker Faire. A festival of invention, creativity and hands-on learning in Kochi, 26–27 January 2027. Organised by TinkerHub Foundation and MakerGram.',
+          'Kerala’s first licensed Maker Faire. A festival of invention, creativity and hands-on learning in Kochi, 26–27 January 2027. Built together by TinkerHub Foundation, MakerGram and Kerala Startup Mission.',
         url: origin,
         image: [`${origin}/img/logo/mf-kochi-square-512.png`],
         /**
@@ -85,6 +85,11 @@ useHead({
             '@type': 'Organization',
             name: 'MakerGram',
           },
+          {
+            '@type': 'Organization',
+            name: 'Kerala Startup Mission',
+            alternateName: 'KSUM',
+          },
         ],
       }),
     },
@@ -97,8 +102,8 @@ useHead({
     <SheetHead n="03" label="When" />
 
     <h2 class="countdown-title">
-      Two days. One harbour.<br />
-      Everything anyone made.
+      Two days in Kochi.<br />
+      Makers from across Kerala.
     </h2>
 
     <div class="countdown-facts">
@@ -137,11 +142,11 @@ useHead({
       </template>
 
       <p v-else-if="phase === 'live'" class="countdown-live">
-        The Faire is on. Come and see.
+        Maker Faire Kochi is open. Join us.
       </p>
 
       <p v-else class="countdown-live countdown-ended">
-        That&rsquo;s a wrap. Thank you, Kochi.
+        Thank you for being part of Maker Faire Kochi 2027.
       </p>
     </div>
   </section>

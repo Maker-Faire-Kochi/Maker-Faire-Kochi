@@ -130,14 +130,14 @@ onUnmounted(() => {
     </picture>
 
     <h1 class="net-hero-title">
-      <span class="t-heavy"><BitsSplitText :lines="['Who are', 'the makers?']" :delay="1050" /></span>
+      <span class="t-heavy"><BitsSplitText :lines="['Where are', 'the makers?']" :delay="1050" /></span>
       <span class="t-light">Kerala’s first licensed Maker Faire.</span>
     </h1>
 
     <div class="hero-copy">
       <p class="net-hero-subtitle">
-        Kerala’s first licensed Maker Faire. Inventors, students, hobbyists and
-        hardware builders, showing what they made. Kochi, 26–27 January 2027.
+        A festival of invention, creativity and hands-on learning. Kochi,
+        26–27 January 2027.
       </p>
 
       <div class="net-hero-actions">
