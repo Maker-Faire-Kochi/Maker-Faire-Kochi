@@ -23,21 +23,22 @@ async function onSubmit(e: Event) {
       <p class="at-sheet">Sht 05 · Media volunteer</p>
       <h1 class="at-title">Media <span class="at-title-accent">team</span></h1>
       <p class="at-lede">
-        Every maker has a story, and we need people to tell them. Join the Maker Faire
-        Kochi media team as a videographer, editor, writer, or designer.
+        Join the Maker Faire Kochi 2027 Media Team as a videographer, editor, writer,
+        or designer, and help tell the stories of makers across Kerala.
       </p>
       <p class="at-note">
-        Open to volunteers across Kerala. This is a media-team call — not the general
-        Get Involved form.
+        Open to volunteers across Kerala. This is a media-team application, separate
+        from the general Get Involved form.
       </p>
     </header>
 
     <div v-if="submitted" class="at-card at-thanks" role="status">
       <div class="at-brand-bar" aria-hidden="true"><span class="cyan" /><span class="red" /></div>
-      <h2>Thanks — we have received your application.</h2>
+      <h2>Thank you. Your application has been received.</h2>
       <p>
-        The team is reviewing it. We will follow up on email or WhatsApp once we
-        have an update.
+        Our team will go through the responses and reach out to you via email or
+        WhatsApp with the next steps. We look forward to the possibility of creating
+        something amazing together!
       </p>
       <a href="/" class="key at-btn-secondary">Back to Maker Faire Kochi</a>
     </div>
