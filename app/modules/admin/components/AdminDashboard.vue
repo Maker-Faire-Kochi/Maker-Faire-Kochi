@@ -14,11 +14,16 @@ import AdminHeatmap from './AdminHeatmap.vue'
 import AdminLineChart from './AdminLineChart.vue'
 import AdminPipeline from './AdminPipeline.vue'
 import AdminSparkline from './AdminSparkline.vue'
+import AdminVolunteerInbox from './AdminVolunteerInbox.vue'
+import type { VolunteerResponseRow } from '~~/shared/volunteer/types'
 
+const sheet = ref<'interest' | 'volunteer'>('interest')
 const tab = ref<'summary' | 'responses'>('summary')
 const rows = ref<InterestResponseRow[]>([])
+const volRows = ref<VolunteerResponseRow[]>([])
 const loading = ref(true)
 const error = ref('')
+const volError = ref('')
 const filterStatus = ref('')
 const filterPart = ref('')
 const search = ref('')
@@ -100,14 +105,16 @@ const filtered = computed(() => {
   })
 })
 
+const formPath = computed(() => (sheet.value === 'volunteer' ? '/volunteer' : '/interestform'))
 const formUrl = computed(() => {
-  if (import.meta.client) return `${window.location.origin}/interestform`
-  return '/interestform'
+  if (import.meta.client) return `${window.location.origin}${formPath.value}`
+  return formPath.value
 })
 
 async function load() {
   loading.value = true
   error.value = ''
+  volError.value = ''
   try {
     const supabase = useAdminSupabase()
     const { session, owner } = await getAdminSession()
@@ -123,6 +130,14 @@ async function load() {
       return
     }
     rows.value = await fetchAllResponses(supabase)
+    try {
+      volRows.value = await fetchAllVolunteers(supabase)
+    } catch (volErr: unknown) {
+      volRows.value = []
+      volError.value = volErr instanceof Error
+        ? volErr.message
+        : 'Could not load media-team rows'
+    }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to load'
   } finally {
@@ -149,6 +164,24 @@ async function fetchAllResponses(
   }
 }
 
+async function fetchAllVolunteers(
+  supabase: ReturnType<typeof useAdminSupabase>,
+): Promise<VolunteerResponseRow[]> {
+  const PAGE = 1000
+  const all: VolunteerResponseRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error: qErr } = await supabase
+      .from('volunteer_responses')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (qErr) throw qErr
+    all.push(...((data || []) as VolunteerResponseRow[]))
+    if (!data || data.length < PAGE) return all
+  }
+}
+
 async function setStatus(id: string, status: string) {
   const supabase = useAdminSupabase()
   const { error: uErr } = await supabase
@@ -161,6 +194,20 @@ async function setStatus(id: string, status: string) {
   }
   const row = rows.value.find((r) => r.id === id)
   if (row) row.status = status as InterestResponseRow['status']
+}
+
+async function setVolunteerStatus(id: string, status: VolunteerResponseRow['status']) {
+  const supabase = useAdminSupabase()
+  const { error: uErr } = await supabase
+    .from('volunteer_responses')
+    .update({ status })
+    .eq('id', id)
+  if (uErr) {
+    error.value = uErr.message
+    return
+  }
+  const row = volRows.value.find((r) => r.id === id)
+  if (row) row.status = status
 }
 
 async function signOut() {
@@ -224,7 +271,9 @@ onMounted(() => {
   <div class="panel">
     <header class="dash-head">
       <div>
-        <p class="eyebrow">Sht 00 &middot; Interest form</p>
+        <p class="eyebrow">
+          {{ sheet === 'volunteer' ? 'Sht 05 · Media volunteer' : 'Sht 00 · Interest form' }}
+        </p>
         <h1 class="dash-title">Control room</h1>
         <p v-if="email && ownerOk" class="signed-in">
           <span class="live-dot" aria-hidden="true" />Signed in as {{ email }}
@@ -247,7 +296,40 @@ onMounted(() => {
     <p v-else-if="error" class="state err" role="alert">{{ error }}</p>
 
     <template v-else-if="ownerOk">
-      <div class="tabs" role="tablist" aria-label="Admin views">
+      <div class="tabs" role="tablist" aria-label="Form sheets">
+        <button
+          type="button"
+          role="tab"
+          class="a-tab"
+          :class="{ active: sheet === 'interest' }"
+          :aria-selected="sheet === 'interest'"
+          @click="sheet = 'interest'"
+        >
+          Interest form
+          <span class="badge">{{ rows.length }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="a-tab"
+          :class="{ active: sheet === 'volunteer' }"
+          :aria-selected="sheet === 'volunteer'"
+          @click="sheet = 'volunteer'"
+        >
+          Media team
+          <span class="badge">{{ volRows.length }}</span>
+        </button>
+      </div>
+
+      <p v-if="sheet === 'volunteer' && volError" class="state err" role="alert">{{ volError }}</p>
+      <AdminVolunteerInbox
+        v-else-if="sheet === 'volunteer'"
+        :rows="volRows"
+        @status="setVolunteerStatus"
+      />
+
+      <template v-else>
+      <div class="tabs" role="tablist" aria-label="Interest views">
         <button
           type="button"
           role="tab"
@@ -459,6 +541,7 @@ onMounted(() => {
           <p v-if="!filtered.length" class="empty">No responses match these filters.</p>
         </div>
       </div>
+      </template>
     </template>
   </div>
 </template>

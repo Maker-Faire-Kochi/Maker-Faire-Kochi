@@ -16,3 +16,10 @@ export const MEDIA_HOURS = [
   { value: '5_10', label: '5 to 10 hours' },
   { value: '10_plus', label: 'More than 10 hours' },
 ] as const
+
+export const VOLUNTEER_STATUSES = [
+  { value: 'new', label: 'New' },
+  { value: 'reviewed', label: 'Reviewed' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'archived', label: 'Archived' },
+] as const

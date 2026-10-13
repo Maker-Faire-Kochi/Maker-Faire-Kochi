@@ -5,7 +5,9 @@
 - `/interestform` is public. Submissions go through `POST /api/interest`, which validates
   and inserts with the service role. Browsers never write to the table directly.
 - `/volunteer` is the media-team call. The sheet UI posts to `POST /api/volunteer`, which
-  validates and forwards into the Google Form (responses land in that form’s Sheet).
+  validates, forwards into the Google Form (that form’s Sheet still receives every row),
+  and inserts a copy into `volunteer_responses` for `/admin`. A confirmation email is
+  sent when Brevo is configured.
 - `/admin` is for **one account**: the email in `NUXT_ADMIN_OWNER_EMAIL`.
   1. Create that one email/password user in **Supabase Authentication → Users**.
   2. Sign in at `/admin/login` with the same email and password.
@@ -22,6 +24,12 @@ NUXT_PUBLIC_SUPABASE_URL=...
 NUXT_PUBLIC_SUPABASE_ANON_KEY=...
 NUXT_SUPABASE_SERVICE_ROLE_KEY=...
 NUXT_ADMIN_OWNER_EMAIL=you@example.com
+
+# Optional — volunteer confirmation mail (Brevo HTTP API). Skip these to keep
+# submissions working without sending mail.
+NUXT_BREVO_API_KEY=xkeysib-xxxxxxxx
+NUXT_MAIL_FROM=Maker Faire Kochi <volunteer@makerfaire.in>
+NUXT_MAIL_REPLY_TO=you@your-inbox.com
 ```
 
 1. Run every file in `supabase/migrations/` in order (SQL editor or `npx supabase db push`).
@@ -36,6 +44,22 @@ NUXT_ADMIN_OWNER_EMAIL=you@example.com
 4. Sign in once at `/admin/login`; this creates the one-user RLS binding.
 5. No redirect URLs or email templates are needed.
 6. Optional check: paste `supabase/tests/interest_rls.sql` into the SQL editor. It rolls back.
+
+## Volunteer confirmation mail
+
+Uses **Brevo** over HTTP (`POST /v3/smtp/email`). The SMTP host/port in the Brevo
+dashboard is unused — Cloudflare Workers cannot open SMTP sockets. Same API key.
+
+1. Create an account at [brevo.com](https://www.brevo.com).
+2. **Senders & IP** → add and verify the from address (or authenticate `makerfaire.in`).
+3. **SMTP & API → API keys** → create a key. Set `NUXT_BREVO_API_KEY`.
+4. Set `NUXT_MAIL_FROM` to `Maker Faire Kochi <volunteer@makerfaire.in>`
+   (must match a verified sender).
+5. Optional: `NUXT_MAIL_REPLY_TO` for reply destination.
+
+Leave the key empty and submissions still save. Only the confirmation email is skipped.
+The message says the application was received, is under review, and that the team
+will get back — with the Maker Faire Kochi lockup in the HTML.
 
 ## Changing the owner
 
@@ -52,3 +76,4 @@ moves the RLS binding so the previous user's existing token also loses direct da
 | `…150000_fix_interest_rls_and_status.sql` | Status-only trigger (superseded by 160000) |
 | `…160000_single_owner.sql` | Owner-only RLS, trigger `search_path`, length caps, drops the queue |
 | `…170000_bind_single_admin_owner.sql` | Binds RLS to one Auth user ID, not a reusable role |
+| `…162400_volunteer_responses.sql` | Media-team table + owner RLS. Google Form still receives every row |

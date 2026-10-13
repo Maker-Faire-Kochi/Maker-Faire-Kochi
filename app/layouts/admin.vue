@@ -12,7 +12,8 @@ useHead({
       sheet="Control room"
       :links="[
         { href: '/admin', label: 'Dashboard' },
-        { href: '/interestform', label: 'Form' },
+        { href: '/interestform', label: 'Interest' },
+        { href: '/volunteer', label: 'Volunteer' },
         { href: '/admin/login', label: 'Login' },
       ]"
     />

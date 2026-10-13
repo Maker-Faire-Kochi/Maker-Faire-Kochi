@@ -35,6 +35,16 @@
         ],
         "createdAt": "2026-10-06T18:12:26.703Z",
         "reason": "Matches InterestForm .at-note and checked-choice inset accents already shipped on the site"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/modules/admin/components/AdminVolunteerInbox.vue",
+          "app/modules/admin/components/AdminDashboard.vue"
+        ],
+        "createdAt": "2026-10-11T11:00:00.000Z",
+        "reason": "Same status and unreviewed inset accents already used on the interest dashboard"
       }
     ]
   }

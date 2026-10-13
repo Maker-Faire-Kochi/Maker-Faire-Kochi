@@ -24,6 +24,13 @@ export default defineNuxtConfig({
      * under `public` is serialized into the HTML of every page, homepage included.
      */
     adminOwnerEmail: process.env.NUXT_ADMIN_OWNER_EMAIL || '',
+    /**
+     * Confirmation mail via Brevo HTTP API (not SMTP — Workers cannot open
+     * SMTP sockets). Leave the key empty to skip sending.
+     */
+    brevoApiKey: process.env.NUXT_BREVO_API_KEY || '',
+    mailFrom: process.env.NUXT_MAIL_FROM || '',
+    mailReplyTo: process.env.NUXT_MAIL_REPLY_TO || '',
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',

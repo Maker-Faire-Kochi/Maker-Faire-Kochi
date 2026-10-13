@@ -34,10 +34,10 @@ async function onSubmit(e: Event) {
 
     <div v-if="submitted" class="at-card at-thanks" role="status">
       <div class="at-brand-bar" aria-hidden="true"><span class="cyan" /><span class="red" /></div>
-      <h2>Thanks — you're on the list.</h2>
+      <h2>Thanks — we have received your application.</h2>
       <p>
-        We read every response. Expect a follow-up as the media team takes shape for
-        2027.
+        The team is reviewing it. We will follow up on email or WhatsApp once we
+        have an update.
       </p>
       <a href="/" class="key at-btn-secondary">Back to Maker Faire Kochi</a>
     </div>
