@@ -64,35 +64,12 @@ export default defineEventHandler(async (event) => {
 
   const row = result.data as unknown as VolunteerRow
   const googleOk = await forwardToGoogle(row)
-
-  // Both stores are written; the submission counts if either one holds it.
-  let rowId: string | null = null
-  try {
-    const supabase = useSupabaseService()
-    const { data, error } = await supabase
-      .from('volunteer_responses')
-      .insert({ ...row, google_forwarded: googleOk })
-      .select('id')
-      .single()
-    if (error) console.error('[volunteer] insert failed', error.message)
-    else rowId = data.id as string
-  } catch (err) {
-    console.error('[volunteer] Supabase unavailable', err)
-  }
-
-  if (!googleOk && !rowId) {
+  if (!googleOk) {
     throw createError({ statusCode: 502, statusMessage: 'Could not save your response' })
   }
 
-  const mail = volunteerReceivedMail(row.name)
-  const sent = await sendMail({ to: row.email, ...mail })
-  if (sent && rowId) {
-    const { error } = await useSupabaseService()
-      .from('volunteer_responses')
-      .update({ confirmation_sent: true })
-      .eq('id', rowId)
-    if (error) console.error('[volunteer] could not mark confirmation', error.message)
-  }
+  // Confirmation mail is best-effort; Google Form is the store of record.
+  await sendMail({ to: row.email, ...volunteerReceivedMail(row.name) })
 
   return { ok: true }
 })

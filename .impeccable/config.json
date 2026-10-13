@@ -40,7 +40,6 @@
         "rule": "side-tab",
         "value": "*",
         "files": [
-          "app/modules/admin/components/AdminVolunteerInbox.vue",
           "app/modules/admin/components/AdminDashboard.vue"
         ],
         "createdAt": "2026-10-11T11:00:00.000Z",

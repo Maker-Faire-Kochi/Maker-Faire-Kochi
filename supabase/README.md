@@ -5,9 +5,8 @@
 - `/interestform` is public. Submissions go through `POST /api/interest`, which validates
   and inserts with the service role. Browsers never write to the table directly.
 - `/volunteer` is the media-team call. The sheet UI posts to `POST /api/volunteer`, which
-  validates, forwards into the Google Form (that form’s Sheet still receives every row),
-  and inserts a copy into `volunteer_responses` for `/admin`. A confirmation email is
-  sent when Brevo is configured.
+  validates and forwards into the Google Form (responses land in that form’s Sheet). A
+  confirmation email is sent when Brevo is configured. Nothing is stored in Supabase.
 - `/admin` is for **one account**: the email in `NUXT_ADMIN_OWNER_EMAIL`.
   1. Create that one email/password user in **Supabase Authentication → Users**.
   2. Sign in at `/admin/login` with the same email and password.
@@ -76,4 +75,3 @@ moves the RLS binding so the previous user's existing token also loses direct da
 | `…150000_fix_interest_rls_and_status.sql` | Status-only trigger (superseded by 160000) |
 | `…160000_single_owner.sql` | Owner-only RLS, trigger `search_path`, length caps, drops the queue |
 | `…170000_bind_single_admin_owner.sql` | Binds RLS to one Auth user ID, not a reusable role |
-| `…162400_volunteer_responses.sql` | Media-team table + owner RLS. Google Form still receives every row |
