@@ -160,16 +160,13 @@ function drawField(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.fillText(PLACE, x, y + 30)
 
   if (st.name.trim()) {
-    const who = fitBlock(ctx, st.name.trim().toUpperCase(), DISPLAY, '400', w, 2, 44)
-    const lh = Math.round(who.size * 1.08)
-    const last = f.y + f.h - 14
-    const first = last - (who.lines.length - 1) * lh
+    const who = layoutName(ctx, st.name.trim().toUpperCase(), w, 52)
+    const top = f.y + f.h - who.height
     ctx.fillStyle = C.ink
     ctx.font = `600 22px ${TEXT}`
-    ctx.fillText(roleBadge({ ...st, foil: false }), x, first - who.size - 16)
+    ctx.fillText(roleBadge({ ...st, foil: false }), x, top - 14)
     ctx.fillStyle = C.blue
-    ctx.font = `400 ${who.size}px ${DISPLAY}`
-    who.lines.forEach((l, i) => ctx.fillText(l, x, first + i * lh))
+    drawName(ctx, who, x, top)
   }
 
   // The foot: a blue band with the date and the address of the site.
@@ -217,7 +214,7 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
   // I'M / GOING / TO / KOCHI!, each line fitted to the column.
   const colW = edge(SIZE) - 56 - 40
   const lines = ['I’M', role.word, role.joiner, 'KOCHI!']
-  const caps = [150, 150, 90, 150]
+  const caps = [120, 130, 72, 130]
   let y = 180
   ctx.fillStyle = C.yellow
   lines.forEach((line, i) => {
@@ -228,6 +225,9 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
     ctx.fillText(line, 52, y)
     y += s * 0.12
   })
+
+  // The flag, under the headline, as the Shenzhen card carries its own.
+  drawIndianFlag(ctx, 56, Math.min(y + 18, SIZE - 370), 150)
 
   // The date block: the one red, the action colour, carrying the when.
   ctx.font = `400 40px ${DISPLAY}`
@@ -336,11 +336,7 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.font = `700 24px ${TEXT}`
   ctx.fillText(name ? badgeRole : 'PASS', x, f.y + 26)
   ctx.fillStyle = C.blue
-  const who = fitBlock(ctx, name || badgeRole, DISPLAY, '400', w, 2, 54)
-  ctx.font = `400 ${who.size}px ${DISPLAY}`
-  const lh = Math.round(who.size * 1.08)
-  who.lines.forEach((l, i) => ctx.fillText(l, x, f.y + 34 + who.size * 0.92 + i * lh))
-  let y = f.y + 34 + who.size * 0.92 + (who.lines.length - 1) * lh + 22
+  let y = drawName(ctx, layoutName(ctx, name || badgeRole, w, 58), x, f.y + 38) + 14
 
   y = Math.max(y, f.y + 130)
   ctx.fillStyle = C.red
@@ -540,6 +536,68 @@ function fitBlock(
   }
   ctx.font = `${weight} 12px ${family}`
   return { size: 12, lines: wrap(ctx, text, maxW).slice(0, maxLines) }
+}
+
+/**
+ * A name set the way the campaign cards set it: the FIRST word big, the rest of the
+ * name smaller under it (at most two lines). Every line is fitted to `maxW`.
+ */
+function layoutName(ctx: CanvasRenderingContext2D, text: string, maxW: number, max: number) {
+  const [first = '', ...more] = text.trim().split(/\s+/)
+  const s1 = fitSize(ctx, first, DISPLAY, '400', maxW, max)
+  const lines = [{ text: first, size: s1 }]
+  if (more.length) {
+    const rest = fitBlock(ctx, more.join(' '), DISPLAY, '400', maxW, 2, Math.round(Math.min(s1, max) * 0.6))
+    for (const l of rest.lines) lines.push({ text: l, size: rest.size })
+  }
+  const height = lines.reduce((h, l) => h + l.size * 1.08, 0)
+  return { lines, height }
+}
+
+/** Draw a laid-out name from its top edge; returns the y just under it. */
+function drawName(ctx: CanvasRenderingContext2D, name: ReturnType<typeof layoutName>, x: number, top: number) {
+  let y = top
+  for (const l of name.lines) {
+    ctx.font = `400 ${l.size}px ${DISPLAY}`
+    ctx.fillText(l.text, x, y + l.size * 0.9)
+    y += l.size * 1.08
+  }
+  return y
+}
+
+/**
+ * The flag of India, 3:2: saffron, white and green bands, the navy Ashoka Chakra
+ * (24 spokes) in the white, its diameter three quarters of the band.
+ */
+function drawIndianFlag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number) {
+  const h = (w * 2) / 3
+  const band = h / 3
+  ctx.fillStyle = '#FF9933'
+  ctx.fillRect(x, y, w, band)
+  ctx.fillStyle = C.white
+  ctx.fillRect(x, y + band, w, band)
+  ctx.fillStyle = '#138808'
+  ctx.fillRect(x, y + band * 2, w, band)
+  const cx = x + w / 2
+  const cy = y + h / 2
+  const r = (band * 0.75) / 2
+  ctx.strokeStyle = '#000080'
+  ctx.fillStyle = '#000080'
+  ctx.lineWidth = Math.max(1, r * 0.1)
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(0.6, r * 0.05)
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r)
+    ctx.stroke()
+  }
+  ctx.beginPath()
+  ctx.arc(cx, cy, r * 0.18, 0, Math.PI * 2)
+  ctx.fill()
 }
 
 /** Word-wrap `text` into `maxW`; returns the baseline y after the last line. */

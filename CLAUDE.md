@@ -106,7 +106,9 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   its lanyard (drops in, swings when tapped or brushed; two damped springs, follows `useMotion`),
   but the PNG is always drawn straight and still. Its QR (`qrcode-generator`, only in this page's
   chunk) encodes https://makerfaire.in; check it still decodes after a layout change. Names are
-  sized by `fitBlock` (every wrapped line must fit, not just the first word). Eggs: Konami = foiled
+  set by `layoutName`: the first word big, the rest smaller under it (owner's pick, after the
+  Shenzhen pack), every line fitted (a long second word once ran off the badge). The Poster
+  carries the Indian flag (`drawIndianFlag`, 3:2, 24-spoke chakra) under its headline. Eggs: Konami = foiled
   ALL ACCESS badge, five quick taps = coir rope strap, name "Makey" = MASCOT. The official logos (long, border, square; PNG +
   PDF, as supplied) are in `public/media-pack/logos/`, plus a square one with Kochi in Malayalam
   (only a 460px PNG, the GitHub org avatar; swap in the source file when it exists). Linked from the
