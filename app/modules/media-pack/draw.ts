@@ -227,7 +227,8 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
   })
 
   // The flag, under the headline, as the Shenzhen card carries its own.
-  drawIndianFlag(ctx, 56, Math.min(y + 18, SIZE - 370), 150)
+  // 220 wide (147 tall), and never lower than 24px above the date block.
+  drawIndianFlag(ctx, 56, Math.min(y + 18, SIZE - 250 - 24 - 147), 220)
 
   // The date block: the one red, the action colour, carrying the when.
   ctx.font = `400 40px ${DISPLAY}`
