@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>Where are the makers?</strong><br>
-  Kerala’s first licensed Maker Faire · 5–6 February 2027 · The Grounds @ Chakola Mill, Kochi · Free entry
+  Kerala’s first Maker Faire · 5–6 February 2027 · The Grounds @ Chakola Mill, Kochi · Free entry
 </p>
 
 <p align="center">
