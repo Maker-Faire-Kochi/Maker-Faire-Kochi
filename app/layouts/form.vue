@@ -6,7 +6,9 @@ useHead({
 })
 
 const sheet = computed(() =>
-  route.path.startsWith('/volunteer') ? 'Media volunteer' : 'Interest form',
+  route.path.startsWith('/volunteer')
+    ? 'Media volunteer'
+    : route.path.startsWith('/media-pack') ? 'Media pack' : 'Interest form',
 )
 </script>
 

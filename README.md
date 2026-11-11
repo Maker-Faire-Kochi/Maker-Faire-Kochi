@@ -60,8 +60,9 @@ A single scrolling page told in chapters, each with a **live, interactive three.
 Every drawing has a static poster fallback for reduced motion, Save-Data and browsers without WebGL,
 plus keyboard equivalents for every pointer interaction.
 
-Other routes: `/interestform` (interest form, stored in Supabase), `/volunteer` (media-team call) and
-`/admin` (owner-only dashboard for responses).
+Other routes: `/interestform` (interest form, stored in Supabase), `/volunteer` (media-team call),
+`/media-pack` (make an “I’m going” share card from your own photo, drawn in the browser and never
+uploaded, plus the official logos as PNG and PDF) and `/admin` (owner-only dashboard for responses).
 
 ## Tech stack
 
