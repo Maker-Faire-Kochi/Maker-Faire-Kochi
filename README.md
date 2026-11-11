@@ -47,7 +47,7 @@ A single scrolling page told in chapters, each with a **live, interactive three.
 
 - **Hero:** a diorama of robots (Makey, two duck walkers, a wheel-legged balancer and a robot dog)
   playing football. Tap to call them over, or grab one and throw it.
-- **What is Maker Faire:** the global network, from the Bay Area in 2006 to 200+ licensed faires in
+- **What is Maker Faire:** the global network, from the Bay Area in 2006 to 200+ Maker Faires in
   40+ countries.
 - **Why Kochi:** a cheena vala worked by two fishers on the Fort Kochi backwater, “the world’s
   longest-running open hardware project”.
