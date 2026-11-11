@@ -7,6 +7,7 @@
  * own plaque (never retypeset), Dela Gothic One for display and Inter for text,
  * and the facts from EVENT.
  */
+import qrcode from 'qrcode-generator'
 import { EVENT } from '~/composables/useCountdown'
 
 export const SIZE = 1080
@@ -25,6 +26,32 @@ export interface CardState {
   /** Pan as a fraction of the slack on each axis, -1..1 (0 = centred). */
   panX: number
   panY: number
+  /** Badge only, preview only: the card's swing on its lanyard (radians) and its drop (px, <= 0). */
+  swing?: number
+  drop?: number
+  /** Easter eggs (badge): Konami gives a holographic ALL ACCESS foil; five taps, a coir rope lanyard. */
+  foil?: boolean
+  coir?: boolean
+}
+
+/** The badge's role line. The faire's own mascot gets its own pass. */
+export function roleBadge(st: Pick<CardState, 'role' | 'name' | 'foil'>) {
+  if (st.foil) return 'ALL ACCESS'
+  if (st.name.trim().toUpperCase() === 'MAKEY') return 'MASCOT'
+  return ROLES[st.role].badge
+}
+
+/** The QR on the badge: the site, so a shared card leads back to it. */
+export const QR_URL = 'https://makerfaire.in'
+let qrCache: { n: number, dark: (r: number, c: number) => boolean } | null = null
+function qrMatrix() {
+  if (!qrCache) {
+    const qr = qrcode(0, 'M')
+    qr.addData(QR_URL)
+    qr.make()
+    qrCache = { n: qr.getModuleCount(), dark: (r, c) => qr.isDark(r, c) }
+  }
+  return qrCache
 }
 
 export const ROLES: Record<Role, { label: string, word: string, joiner: string, badge: string }> = {
@@ -133,13 +160,13 @@ function drawField(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.fillText(PLACE, x, y + 30)
 
   if (st.name.trim()) {
+    const who = layoutName(ctx, st.name.trim().toUpperCase(), w, 52)
+    const top = f.y + f.h - who.height
     ctx.fillStyle = C.ink
     ctx.font = `600 22px ${TEXT}`
-    ctx.fillText(role.badge, x, f.y + f.h - 70)
+    ctx.fillText(roleBadge({ ...st, foil: false }), x, top - 14)
     ctx.fillStyle = C.blue
-    const ns = fitSize(ctx, st.name.toUpperCase(), DISPLAY, '400', w, 44)
-    ctx.font = `400 ${ns}px ${DISPLAY}`
-    ctx.fillText(st.name.toUpperCase(), x, f.y + f.h - 14)
+    drawName(ctx, who, x, top)
   }
 
   // The foot: a blue band with the date and the address of the site.
@@ -187,7 +214,7 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
   // I'M / GOING / TO / KOCHI!, each line fitted to the column.
   const colW = edge(SIZE) - 56 - 40
   const lines = ['I’M', role.word, role.joiner, 'KOCHI!']
-  const caps = [150, 150, 90, 150]
+  const caps = [120, 130, 72, 130]
   let y = 180
   ctx.fillStyle = C.yellow
   lines.forEach((line, i) => {
@@ -198,6 +225,10 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
     ctx.fillText(line, 52, y)
     y += s * 0.12
   })
+
+  // The flag, under the headline, as the Shenzhen card carries its own.
+  // 220 wide (147 tall), and never lower than 24px above the date block.
+  drawIndianFlag(ctx, 56, Math.min(y + 18, SIZE - 250 - 24 - 147), 220)
 
   // The date block: the one red, the action colour, carrying the when.
   ctx.font = `400 40px ${DISPLAY}`
@@ -231,7 +262,7 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
 
 function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   const role = ROLES[st.role]
-  // Paper with the site's dot grid.
+  // Paper with the site's dot grid. It stays still; the badge swings over it.
   ctx.fillStyle = C.paper
   ctx.fillRect(0, 0, SIZE, SIZE)
   ctx.fillStyle = 'rgba(34, 34, 34, 0.16)'
@@ -245,9 +276,30 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
 
   const card = { x: 190, y: 150, w: 700, h: 870 }
 
-  // The lanyard: a red strap to a clip.
-  ctx.fillStyle = C.red
-  ctx.fillRect(SIZE / 2 - 40, 0, 80, card.y + 26)
+  // The whole lanyard hangs from a point above the frame and swings about it.
+  ctx.save()
+  const pivotY = -260
+  ctx.translate(SIZE / 2, pivotY + (st.drop ?? 0))
+  ctx.rotate(st.swing ?? 0)
+  ctx.translate(-SIZE / 2, -pivotY)
+
+  // The strap: red webbing, or (egg) a twisted coir rope.
+  if (st.coir) {
+    ctx.fillStyle = '#8A5A2B'
+    ctx.fillRect(SIZE / 2 - 22, pivotY, 44, card.y + 26 - pivotY)
+    ctx.strokeStyle = '#5C3A17'
+    ctx.lineWidth = 5
+    for (let y = pivotY; y < card.y + 26; y += 22) {
+      ctx.beginPath()
+      ctx.moveTo(SIZE / 2 - 22, y)
+      ctx.lineTo(SIZE / 2 + 22, y + 16)
+      ctx.stroke()
+    }
+  }
+  else {
+    ctx.fillStyle = C.red
+    ctx.fillRect(SIZE / 2 - 40, pivotY, 80, card.y + 26 - pivotY)
+  }
   ctx.fillStyle = C.ink
   ctx.fillRect(SIZE / 2 - 56, card.y - 22, 112, 40)
 
@@ -266,15 +318,6 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.fillStyle = C.ink
   ctx.fillRect(card.x, card.y + 200, card.w, 3)
   ctx.restore()
-  ctx.strokeStyle = C.ink
-  ctx.lineWidth = 4
-  roundRect(ctx, card.x, card.y, card.w, card.h, 28)
-  ctx.stroke()
-  // The slot the clip goes through.
-  ctx.fillStyle = C.paper
-  roundRect(ctx, SIZE / 2 - 50, card.y + 24, 100, 18, 9)
-  ctx.fill()
-  ctx.stroke()
 
   drawLogo(ctx, st.logo, SIZE / 2 - 260, card.y + 82, 520)
 
@@ -289,13 +332,14 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   const x = f.x + f.w + 36
   const w = card.x + card.w - 40 - x
   const name = st.name.trim().toUpperCase()
+  const badgeRole = roleBadge(st)
   ctx.fillStyle = C.red
   ctx.font = `700 24px ${TEXT}`
-  ctx.fillText(name ? role.badge : 'PASS', x, f.y + 26)
+  ctx.fillText(name ? badgeRole : 'PASS', x, f.y + 26)
   ctx.fillStyle = C.blue
-  let y = wrapLines(ctx, name || role.badge, x, f.y + 84, w, `400 ${fitSize(ctx, (name || role.badge).split(' ')[0]!, DISPLAY, '400', w, 54)}px ${DISPLAY}`, 58, 2)
+  let y = drawName(ctx, layoutName(ctx, name || badgeRole, w, 58), x, f.y + 38) + 14
 
-  y = Math.max(y + 8, f.y + 170)
+  y = Math.max(y, f.y + 130)
   ctx.fillStyle = C.red
   ctx.font = `700 26px ${TEXT}`
   const pw = ctx.measureText(DATE_SHORT).width + 44
@@ -310,13 +354,78 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.fillStyle = C.blue
   wrapLines(ctx, `${VENUE}, KOCHI`, x, y + 116, w, `700 20px ${TEXT}`, 26, 3)
 
-  // I'M GOING, and a barcode under it.
+  // I'M GOING across the card.
   const head = `I’M ${role.word}`
   ctx.fillStyle = C.blue
   const hs = fitSize(ctx, head, DISPLAY, '400', card.w - 76, 84)
   ctx.font = `400 ${hs}px ${DISPLAY}`
-  ctx.fillText(head, card.x + 38, f.y + f.h + 52 + hs * 0.8)
-  barcode(ctx, card.x + 40, card.y + card.h - 112, card.w - 80, 64, `${st.role}${name}`)
+  const headBase = f.y + f.h + 40 + hs * 0.8
+  ctx.fillText(head, card.x + 38, headBase)
+
+  // The foot: a barcode and the site on the left, a working QR code on the right.
+  const qs = 136
+  const qx = card.x + card.w - 40 - qs
+  const qy = card.y + card.h - 36 - qs
+  barcode(ctx, card.x + 40, qy + 8, qx - card.x - 40 - 28, 76, `${st.role}${name}`)
+  ctx.fillStyle = C.ink
+  ctx.font = `700 22px ${TEXT}`
+  ctx.fillText('MAKERFAIRE.IN', card.x + 40, qy + qs - 4)
+  drawQr(ctx, qx, qy, qs)
+
+  // Egg: a holographic foil over the whole card, its shine following the swing.
+  if (st.foil) {
+    ctx.save()
+    roundRect(ctx, card.x, card.y, card.w, card.h, 28)
+    ctx.clip()
+    const t = (st.swing ?? 0) * 900
+    const g = ctx.createLinearGradient(card.x + t, card.y, card.x + card.w + t, card.y + card.h)
+    const hues = ['#FF5A5F', '#FFE86C', '#5CE1A0', '#00AEEF', '#8F86EE', '#FF5A5F']
+    hues.forEach((h, i) => g.addColorStop(i / (hues.length - 1), h))
+    ctx.globalAlpha = 0.28
+    ctx.globalCompositeOperation = 'multiply'
+    ctx.fillStyle = g
+    ctx.fillRect(card.x, card.y, card.w, card.h)
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.globalAlpha = 0.35
+    const sx = card.x + card.w * 0.5 + t * 0.6
+    const shine = ctx.createLinearGradient(sx - 160, card.y, sx + 160, card.y + 220)
+    shine.addColorStop(0, 'rgba(255,255,255,0)')
+    shine.addColorStop(0.5, 'rgba(255,255,255,0.9)')
+    shine.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = shine
+    ctx.fillRect(card.x, card.y, card.w, card.h)
+    ctx.restore()
+  }
+
+  ctx.strokeStyle = C.ink
+  ctx.lineWidth = 4
+  roundRect(ctx, card.x, card.y, card.w, card.h, 28)
+  ctx.stroke()
+  // The slot the clip goes through.
+  ctx.fillStyle = C.paper
+  roundRect(ctx, SIZE / 2 - 50, card.y + 24, 100, 18, 9)
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.restore()
+}
+
+/** A real QR code (to QR_URL), campaign blue on white with its quiet zone. */
+function drawQr(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  const { n, dark } = qrMatrix()
+  const quiet = 2
+  const cell = size / (n + quiet * 2)
+  ctx.fillStyle = C.white
+  ctx.fillRect(x, y, size, size)
+  ctx.fillStyle = C.blue
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (dark(r, c)) {
+        // Whole pixels, slightly overlapping, so no hairline seams show between modules.
+        ctx.fillRect(Math.floor(x + (c + quiet) * cell), Math.floor(y + (r + quiet) * cell), Math.ceil(cell) + 0.5, Math.ceil(cell) + 0.5)
+      }
+    }
+  }
 }
 
 // ── Pieces ─────────────────────────────────────────────────────────────────
@@ -397,16 +506,11 @@ function fitSize(ctx: CanvasRenderingContext2D, text: string, family: string, we
   return Math.max(12, Math.min(max, Math.floor((maxW / w100) * 100)))
 }
 
-/** Word-wrap `text` into `maxW`; returns the baseline y after the last line. */
-function wrapLines(
-  ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number,
-  font: string, lh: number, maxLines = 4,
-) {
-  ctx.font = font
-  const words = text.split(/\s+/)
+/** Break `text` into lines no wider than `maxW` in the current font (a single long word stays whole). */
+function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number) {
   const lines: string[] = []
   let line = ''
-  for (const word of words) {
+  for (const word of text.split(/\s+/).filter(Boolean)) {
     const next = line ? `${line} ${word}` : word
     if (line && ctx.measureText(next).width > maxW) {
       lines.push(line)
@@ -415,6 +519,95 @@ function wrapLines(
     else line = next
   }
   if (line) lines.push(line)
+  return lines
+}
+
+/**
+ * The largest size (<= max) at which `text`, word-wrapped, takes at most `maxLines`
+ * lines and EVERY line fits `maxW` -- a name's longest word, not its first, sets the size.
+ */
+function fitBlock(
+  ctx: CanvasRenderingContext2D, text: string, family: string, weight: string,
+  maxW: number, maxLines: number, max: number,
+) {
+  for (let size = max; size > 12; size -= 1) {
+    ctx.font = `${weight} ${size}px ${family}`
+    const lines = wrap(ctx, text, maxW)
+    if (lines.length <= maxLines && lines.every(l => ctx.measureText(l).width <= maxW)) return { size, lines }
+  }
+  ctx.font = `${weight} 12px ${family}`
+  return { size: 12, lines: wrap(ctx, text, maxW).slice(0, maxLines) }
+}
+
+/**
+ * A name set the way the campaign cards set it: the FIRST word big, the rest of the
+ * name smaller under it (at most two lines). Every line is fitted to `maxW`.
+ */
+function layoutName(ctx: CanvasRenderingContext2D, text: string, maxW: number, max: number) {
+  const [first = '', ...more] = text.trim().split(/\s+/)
+  const s1 = fitSize(ctx, first, DISPLAY, '400', maxW, max)
+  const lines = [{ text: first, size: s1 }]
+  if (more.length) {
+    const rest = fitBlock(ctx, more.join(' '), DISPLAY, '400', maxW, 2, Math.round(Math.min(s1, max) * 0.6))
+    for (const l of rest.lines) lines.push({ text: l, size: rest.size })
+  }
+  const height = lines.reduce((h, l) => h + l.size * 1.08, 0)
+  return { lines, height }
+}
+
+/** Draw a laid-out name from its top edge; returns the y just under it. */
+function drawName(ctx: CanvasRenderingContext2D, name: ReturnType<typeof layoutName>, x: number, top: number) {
+  let y = top
+  for (const l of name.lines) {
+    ctx.font = `400 ${l.size}px ${DISPLAY}`
+    ctx.fillText(l.text, x, y + l.size * 0.9)
+    y += l.size * 1.08
+  }
+  return y
+}
+
+/**
+ * The flag of India, 3:2: saffron, white and green bands, the navy Ashoka Chakra
+ * (24 spokes) in the white, its diameter three quarters of the band.
+ */
+function drawIndianFlag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number) {
+  const h = (w * 2) / 3
+  const band = h / 3
+  ctx.fillStyle = '#FF9933'
+  ctx.fillRect(x, y, w, band)
+  ctx.fillStyle = C.white
+  ctx.fillRect(x, y + band, w, band)
+  ctx.fillStyle = '#138808'
+  ctx.fillRect(x, y + band * 2, w, band)
+  const cx = x + w / 2
+  const cy = y + h / 2
+  const r = (band * 0.75) / 2
+  ctx.strokeStyle = '#000080'
+  ctx.fillStyle = '#000080'
+  ctx.lineWidth = Math.max(1, r * 0.1)
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(0.6, r * 0.05)
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r)
+    ctx.stroke()
+  }
+  ctx.beginPath()
+  ctx.arc(cx, cy, r * 0.18, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** Word-wrap `text` into `maxW`; returns the baseline y after the last line. */
+function wrapLines(
+  ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number,
+  font: string, lh: number, maxLines = 4,
+) {
+  ctx.font = font
+  const lines = wrap(ctx, text, maxW)
   const shown = lines.slice(0, maxLines)
   if (lines.length > maxLines) shown[maxLines - 1] = `${shown[maxLines - 1]}…`
   shown.forEach((l, i) => ctx.fillText(l, x, y + i * lh))

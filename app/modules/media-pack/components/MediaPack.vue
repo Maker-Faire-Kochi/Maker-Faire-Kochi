@@ -6,26 +6,35 @@
  *
  * Every pointer interaction has a control: drag the photo, or use the nudge keys
  * (and the arrow keys on the focused preview); pinch-free zoom is the slider.
+ *
+ * The Badge (the default) hangs on its lanyard in the preview: it drops in, swings
+ * when tapped or brushed, and settles. That is preview only and follows useMotion
+ * (reduced motion or the Pause key: it just hangs still). The PNG is always drawn
+ * straight and still. Eggs: the Konami code foils the badge ALL ACCESS, five quick
+ * taps on the card swap the strap for coir rope, and the name "Makey" gets a mascot pass.
  */
 import { EVENT } from '~/composables/useCountdown'
+import { useMotion } from '~/composables/useMotion'
 import { drawCard, photoFit, photoFrame, ROLES, SIZE, type CardState, type Design, type Role } from '../draw'
 
 const DESIGNS: { value: Design, label: string, note: string }[] = [
+  { value: 'badge', label: 'Badge', note: 'A lanyard pass' },
   { value: 'field', label: 'Field', note: 'Yellow, photo framed' },
   { value: 'poster', label: 'Poster', note: 'Blue, photo full height' },
-  { value: 'badge', label: 'Badge', note: 'A lanyard pass' },
 ]
 const ROLE_LIST = Object.entries(ROLES).map(([value, r]) => ({ value: value as Role, label: r.label }))
 const NAME_MAX = 40
 
 /** The official lockups, as supplied (public/media-pack/logos). PNGs are 4K-wide. */
 const LOGOS = [
-  { key: 'long', label: 'Long', note: 'One line, 3871 × 646', w: 960, h: 160 },
-  { key: 'border', label: 'Border', note: 'One line, framed, 4092 × 859', w: 960, h: 202 },
-  { key: 'square', label: 'Square', note: 'Stacked, 1667 × 1667', w: 480, h: 480 },
+  { key: 'long', label: 'Long', note: 'One line, 3871 × 646', w: 960, h: 160, pdf: true, ml: '', alt: '' },
+  { key: 'border', label: 'Border', note: 'One line, framed, 4092 × 859', w: 960, h: 202, pdf: true, ml: '', alt: '' },
+  { key: 'square', label: 'Square', note: 'Stacked, 1667 × 1667', w: 480, h: 480, pdf: true, ml: '', alt: '' },
+  /* Kochi in Malayalam. Only a 460px PNG exists so far (the GitHub avatar): no PDF. */
+  { key: 'square-malayalam', label: 'Square, Malayalam', ml: 'കൊച്ചി', note: '460 × 460, for profile pictures', w: 460, h: 460, pdf: false, alt: 'Maker Faire Kochi logo, square, with Kochi written in Malayalam' },
 ]
 
-const design = ref<Design>('field')
+const design = ref<Design>('badge')
 const role = ref<Role>('visiting')
 const name = ref('')
 const zoom = ref(1)
@@ -36,6 +45,11 @@ const logo = shallowRef<HTMLImageElement | null>(null)
 const status = ref('')
 const canShare = ref(false)
 const busy = ref(false)
+const foil = ref(false)
+const coir = ref(false)
+
+const { state: motion, init: initMotion } = useMotion()
+const animate = () => motion.value === 'running'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -50,19 +64,71 @@ const state = (): CardState => ({
   zoom: zoom.value,
   panX: panX.value,
   panY: panY.value,
+  foil: foil.value,
+  coir: coir.value,
 })
 
+// ── The badge on its lanyard: two damped springs, the swing and the drop ──
+const hang = { swing: 0, spin: 0, drop: 0, fall: 0 }
+let lastT = 0
 let frame = 0
-function redraw() {
-  if (frame) return
-  frame = requestAnimationFrame(() => {
-    frame = 0
-    const ctx = canvas.value?.getContext('2d')
-    if (ctx) drawCard(ctx, state())
-  })
+
+function settled() {
+  return Math.abs(hang.swing) < 0.0008 && Math.abs(hang.spin) < 0.002
+    && Math.abs(hang.drop) < 0.5 && Math.abs(hang.fall) < 2
 }
 
-watch([design, role, name, zoom, panX, panY, photo, logo], redraw)
+function paint() {
+  const ctx = canvas.value?.getContext('2d')
+  if (ctx) drawCard(ctx, { ...state(), swing: hang.swing, drop: hang.drop })
+}
+
+function step(t: number) {
+  frame = 0
+  const dt = Math.min(0.033, lastT ? (t - lastT) / 1000 : 0.016)
+  lastT = t
+  if (design.value === 'badge' && animate()) {
+    // Fixed small sub-steps keep the springs stable on a slow frame.
+    for (let left = dt; left > 0; left -= 0.004) {
+      const h = Math.min(0.004, left)
+      hang.spin += (-26 * hang.swing - 1.6 * hang.spin) * h
+      hang.swing += hang.spin * h
+      hang.fall += (-150 * hang.drop - 17 * hang.fall) * h
+      hang.drop += hang.fall * h
+    }
+  }
+  else {
+    Object.assign(hang, { swing: 0, spin: 0, drop: 0, fall: 0 })
+  }
+  paint()
+  if (!settled() && design.value === 'badge' && animate()) frame = requestAnimationFrame(step)
+  else lastT = 0
+}
+
+function redraw() {
+  if (frame) return
+  frame = requestAnimationFrame(step)
+}
+
+/** Drop the badge in from above, already swinging. */
+function dropIn() {
+  if (design.value !== 'badge' || !animate()) return redraw()
+  Object.assign(hang, { swing: 0.05, spin: 0.9, drop: -SIZE * 0.85, fall: 0 })
+  redraw()
+}
+
+/** A flick: tap or brush the card and it swings away from the hand. */
+function flick(amount: number) {
+  if (design.value !== 'badge' || !animate()) return
+  hang.spin = Math.max(-2.2, Math.min(2.2, hang.spin + amount))
+  redraw()
+}
+
+watch([role, name, zoom, panX, panY, photo, logo, foil, coir, motion], redraw)
+watch(design, dropIn)
+watch(name, (n) => {
+  if (n.trim().toUpperCase() === 'MAKEY') status.value = 'Makey gets the mascot pass.'
+})
 
 const label = computed(() => {
   const d = DESIGNS.find(x => x.value === design.value)!.label
@@ -76,7 +142,9 @@ onMounted(async () => {
   img.onload = () => { logo.value = img }
   img.src = '/img/logo/mf-kochi-long.png'
 
-  redraw()
+  initMotion()
+  dropIn()
+  window.addEventListener('keydown', onWindowKey)
   // The fonts arrive after first paint (the print-media swap): redraw as they land.
   try {
     await Promise.all([
@@ -100,6 +168,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.fonts.removeEventListener?.('loadingdone', redraw)
+  window.removeEventListener('keydown', onWindowKey)
   if (frame) cancelAnimationFrame(frame)
   if (photoUrl) URL.revokeObjectURL(photoUrl)
 })
@@ -162,14 +231,53 @@ function resetPosition() {
   status.value = 'Photo centred.'
 }
 
+// ── Eggs ──
+const KONAMI = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a']
+let keys: string[] = []
+function onWindowKey(e: KeyboardEvent) {
+  if ((e.target as HTMLElement | null)?.closest('input, textarea, select, [contenteditable]')) return
+  keys = [...keys, e.key.toLowerCase()].slice(-KONAMI.length)
+  if (keys.join() !== KONAMI.join()) return
+  keys = []
+  foil.value = !foil.value
+  if (foil.value) design.value = 'badge'
+  flick(1.4)
+  status.value = foil.value ? 'All access. The badge is foiled.' : 'The foil is off.'
+}
+
+let taps: number[] = []
+function countTap() {
+  const now = performance.now()
+  taps = [...taps.filter(t => now - t < 2000), now]
+  if (taps.length < 5 || design.value !== 'badge') return
+  taps = []
+  coir.value = !coir.value
+  status.value = coir.value ? 'A coir rope lanyard, twisted by hand.' : 'Back to the red lanyard.'
+}
+
 let drag: { id: number, x: number, y: number } | null = null
+let brush: { x: number, t: number } | null = null
 function onDown(e: PointerEvent) {
+  countTap()
+  if (canvas.value) {
+    // Tapped left of the clip, it swings right; right of it, left.
+    const r = canvas.value.getBoundingClientRect()
+    flick(((e.clientX - r.left) / r.width - 0.5) * -1.6)
+  }
   if (!photo.value) return
   drag = { id: e.pointerId, x: e.clientX, y: e.clientY }
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
 }
 function onMove(e: PointerEvent) {
-  if (!drag || drag.id !== e.pointerId || !canvas.value) return
+  if (!drag || drag.id !== e.pointerId || !canvas.value) {
+    // A pointer brushing across the card nudges it the way it is moving.
+    if (e.pointerType === 'mouse' && !drag) {
+      const now = performance.now()
+      if (brush && now - brush.t < 80) flick(Math.max(-0.12, Math.min(0.12, (e.clientX - brush.x) * 0.004)))
+      brush = { x: e.clientX, t: now }
+    }
+    return
+  }
   const scale = SIZE / canvas.value.getBoundingClientRect().width
   panBy((e.clientX - drag.x) * scale, (e.clientY - drag.y) * scale)
   drag.x = e.clientX
@@ -199,10 +307,14 @@ function fileName() {
 function toBlob(): Promise<Blob | null> {
   return new Promise((resolve) => {
     if (!canvas.value) return resolve(null)
-    // Draw synchronously first, so the file is never one frame behind the controls.
+    // Draw synchronously first, so the file is never one frame behind the controls --
+    // and straight and still: the swing and the drop belong to the preview only.
     const ctx = canvas.value.getContext('2d')
     if (ctx) drawCard(ctx, state())
-    canvas.value.toBlob(resolve, 'image/png')
+    canvas.value.toBlob((blob) => {
+      paint()
+      resolve(blob)
+    }, 'image/png')
   })
 }
 
@@ -389,7 +501,7 @@ async function share() {
                 :src="`/media-pack/logos/preview-${l.key}.webp`"
                 :width="l.w"
                 :height="l.h"
-                :alt="`Maker Faire Kochi logo, ${l.label.toLowerCase()}`"
+                :alt="l.alt || `Maker Faire Kochi logo, ${l.label.toLowerCase()}`"
                 loading="lazy"
                 decoding="async"
               />
@@ -397,13 +509,13 @@ async function share() {
             <div class="mp-logo-foot">
               <p class="mp-logo-name">
                 <strong>{{ l.label }}</strong>
-                <span>{{ l.note }}</span>
+                <span><span v-if="l.ml" lang="ml">{{ l.ml }}, </span>{{ l.note }}</span>
               </p>
               <div class="mp-row">
                 <a class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.png`" download>
                   PNG<span class="visually-hidden">, {{ l.label }} logo</span>
                 </a>
-                <a class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.pdf`" download>
+                <a v-if="l.pdf" class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.pdf`" download>
                   PDF<span class="visually-hidden">, {{ l.label }} logo</span>
                 </a>
               </div>
@@ -590,7 +702,7 @@ async function share() {
 
 .mp-logo-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
   gap: 1rem;
   margin: 0;
   padding: 0;
@@ -623,7 +735,8 @@ async function share() {
   height: auto;
 }
 
-.mp-logo.is-square .mp-logo-art img {
+.mp-logo.is-square .mp-logo-art img,
+.mp-logo.is-square-malayalam .mp-logo-art img {
   width: min(100%, 10rem);
 }
 

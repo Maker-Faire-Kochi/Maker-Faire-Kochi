@@ -102,8 +102,17 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
 - **Media pack** (`/media-pack`, `modules/media-pack/`, form layout): an "I'm going / exhibiting /
   volunteering" share card drawn straight onto a 1080x1080 canvas (`draw.ts`: Field, Poster,
   Badge), so the preview IS the PNG; the photo is an object URL and never leaves the device.
-  Dragging the photo has buttons + arrow keys too. The official logos (long, border, square; PNG +
-  PDF, as supplied) are in `public/media-pack/logos/`; linked from the footer ("Spread the word").
+  Dragging the photo has buttons + arrow keys too. Badge is the default: in the PREVIEW it hangs on
+  its lanyard (drops in, swings when tapped or brushed; two damped springs, follows `useMotion`),
+  but the PNG is always drawn straight and still. Its QR (`qrcode-generator`, only in this page's
+  chunk) encodes https://makerfaire.in; check it still decodes after a layout change. Names are
+  set by `layoutName`: the first word big, the rest smaller under it (owner's pick, after the
+  Shenzhen pack), every line fitted (a long second word once ran off the badge). The Poster
+  carries the Indian flag (`drawIndianFlag`, 3:2, 24-spoke chakra, 220px wide) under its headline. Eggs: Konami = foiled
+  ALL ACCESS badge, five quick taps = coir rope strap, name "Makey" = MASCOT. The official logos (long, border, square; PNG +
+  PDF, as supplied) are in `public/media-pack/logos/`, plus a square one with Kochi in Malayalam
+  (only a 460px PNG, the GitHub org avatar; swap in the source file when it exists). Linked from the
+  footer ("Spread the word").
 - **One WebGL renderer** (`core/stage.ts`, multiple-scenes pattern, scissor per slot, only visible
   slots simulate). `<ThreeSceneSlot>` SSRs a poster `<picture>` and imports three.js after load +
   idle; reduced motion, Save-Data and no-WebGL never import it.
