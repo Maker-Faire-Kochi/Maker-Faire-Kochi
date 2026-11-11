@@ -15,7 +15,7 @@ const args = process.argv.slice(2)
 const baseAt = args.indexOf('--base')
 const base = baseAt === -1 ? 'http://localhost:3000' : args[baseAt + 1]
 const SIZES = [[320, 640], [375, 667], [390, 844], [414, 896], [768, 1024], [900, 700], [1024, 768], [1280, 800], [1366, 768], [1440, 900], [1920, 1080], [2560, 1080], [3840, 2160]]
-const PAGES = ['/', '/interestform', '/volunteer']
+const PAGES = ['/', '/interestform', '/volunteer', '/media-pack']
 const BOXES = '.chapter-panel, .stall-board, .hero-copy, .chapter-dock, .hero-under, .footer-container, .wrap'
 
 const CHROME = process.env.CHROME_PATH

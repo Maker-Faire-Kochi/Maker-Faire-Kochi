@@ -99,6 +99,11 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   figure + head pinned beside its fields over 900px, stacked below); choice tiles fill campaign
   blue when chosen, the focus ring goes round the tile; submit is the red key; thanks is a blue
   panel. SheetBar hides its Home link at <= 430px (the logo goes home).
+- **Media pack** (`/media-pack`, `modules/media-pack/`, form layout): an "I'm going / exhibiting /
+  volunteering" share card drawn straight onto a 1080x1080 canvas (`draw.ts`: Field, Poster,
+  Badge), so the preview IS the PNG; the photo is an object URL and never leaves the device.
+  Dragging the photo has buttons + arrow keys too. The official logos (long, border, square; PNG +
+  PDF, as supplied) are in `public/media-pack/logos/`; linked from the footer ("Spread the word").
 - **One WebGL renderer** (`core/stage.ts`, multiple-scenes pattern, scissor per slot, only visible
   slots simulate). `<ThreeSceneSlot>` SSRs a poster `<picture>` and imports three.js after load +
   idle; reduced motion, Save-Data and no-WebGL never import it.

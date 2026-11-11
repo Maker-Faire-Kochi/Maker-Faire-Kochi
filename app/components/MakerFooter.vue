@@ -95,6 +95,9 @@ const builders = [
           <h2 class="label col-title">Contact</h2>
           <a :href="`mailto:${CONTACT_EMAIL}`" class="contact-email">{{ CONTACT_EMAIL }}</a>
 
+          <h2 class="label col-title builders-title">Spread the word</h2>
+          <NuxtLink to="/media-pack" class="contact-email">Media pack: share card &amp; logos</NuxtLink>
+
           <h2 class="label col-title builders-title">Collectively building</h2>
           <ul class="builder-list">
             <li v-for="name in builders" :key="name">{{ name }}</li>
