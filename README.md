@@ -26,9 +26,9 @@ This is the source of **[makerfaire.in](https://makerfaire.in/)**, the public we
 Kochi 2027: a festival of invention, creativity and hands-on learning, where inventors, engineers,
 crafters, students and hobbyists show what they make, and how.
 
-Maker Faire Kochi is built collectively by **TinkerHub Foundation**, **MakerGram** and **Kerala
-Startup Mission**, giving Kerala’s Fab Labs, tinkering labs, campuses and maker communities a shared
-public stage.
+Maker Faire Kochi is collectively run by communities, together with **TinkerHub Foundation**,
+**MakerGram** and **Kerala Startup Mission**, giving Kerala’s Fab Labs, tinkering labs, campuses and
+maker communities a shared public stage.
 
 ## The event
 
