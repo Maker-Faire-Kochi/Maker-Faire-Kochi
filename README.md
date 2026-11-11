@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://makerfaire.in/"><img src="public/img/scenes/hero-1440.webp" alt="The Maker Faire Kochi homepage: robots playing football on a yellow diorama board" width="800"></a>
+  <a href="https://makerfaire.in/"><img src="docs/img/readme/homepage.webp" alt="The makerfaire.in homepage: the headline Where are the makers?, the event facts, and robots playing football on a yellow diorama board" width="800"></a>
 </p>
 
 This is the source of **[makerfaire.in](https://makerfaire.in/)**, the public website for Maker Faire
