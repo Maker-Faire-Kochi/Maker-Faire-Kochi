@@ -103,7 +103,9 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   volunteering" share card drawn straight onto a 1080x1080 canvas (`draw.ts`: Field, Poster,
   Badge), so the preview IS the PNG; the photo is an object URL and never leaves the device.
   Dragging the photo has buttons + arrow keys too. The official logos (long, border, square; PNG +
-  PDF, as supplied) are in `public/media-pack/logos/`; linked from the footer ("Spread the word").
+  PDF, as supplied) are in `public/media-pack/logos/`, plus a square one with Kochi in Malayalam
+  (only a 460px PNG, the GitHub org avatar; swap in the source file when it exists). Linked from the
+  footer ("Spread the word").
 - **One WebGL renderer** (`core/stage.ts`, multiple-scenes pattern, scissor per slot, only visible
   slots simulate). `<ThreeSceneSlot>` SSRs a poster `<picture>` and imports three.js after load +
   idle; reduced motion, Save-Data and no-WebGL never import it.

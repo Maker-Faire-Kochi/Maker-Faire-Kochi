@@ -20,9 +20,11 @@ const NAME_MAX = 40
 
 /** The official lockups, as supplied (public/media-pack/logos). PNGs are 4K-wide. */
 const LOGOS = [
-  { key: 'long', label: 'Long', note: 'One line, 3871 × 646', w: 960, h: 160 },
-  { key: 'border', label: 'Border', note: 'One line, framed, 4092 × 859', w: 960, h: 202 },
-  { key: 'square', label: 'Square', note: 'Stacked, 1667 × 1667', w: 480, h: 480 },
+  { key: 'long', label: 'Long', note: 'One line, 3871 × 646', w: 960, h: 160, pdf: true, ml: '', alt: '' },
+  { key: 'border', label: 'Border', note: 'One line, framed, 4092 × 859', w: 960, h: 202, pdf: true, ml: '', alt: '' },
+  { key: 'square', label: 'Square', note: 'Stacked, 1667 × 1667', w: 480, h: 480, pdf: true, ml: '', alt: '' },
+  /* Kochi in Malayalam. Only a 460px PNG exists so far (the GitHub avatar): no PDF. */
+  { key: 'square-malayalam', label: 'Square, Malayalam', ml: 'കൊച്ചി', note: '460 × 460, for profile pictures', w: 460, h: 460, pdf: false, alt: 'Maker Faire Kochi logo, square, with Kochi written in Malayalam' },
 ]
 
 const design = ref<Design>('field')
@@ -389,7 +391,7 @@ async function share() {
                 :src="`/media-pack/logos/preview-${l.key}.webp`"
                 :width="l.w"
                 :height="l.h"
-                :alt="`Maker Faire Kochi logo, ${l.label.toLowerCase()}`"
+                :alt="l.alt || `Maker Faire Kochi logo, ${l.label.toLowerCase()}`"
                 loading="lazy"
                 decoding="async"
               />
@@ -397,13 +399,13 @@ async function share() {
             <div class="mp-logo-foot">
               <p class="mp-logo-name">
                 <strong>{{ l.label }}</strong>
-                <span>{{ l.note }}</span>
+                <span><span v-if="l.ml" lang="ml">{{ l.ml }}, </span>{{ l.note }}</span>
               </p>
               <div class="mp-row">
                 <a class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.png`" download>
                   PNG<span class="visually-hidden">, {{ l.label }} logo</span>
                 </a>
-                <a class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.pdf`" download>
+                <a v-if="l.pdf" class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.pdf`" download>
                   PDF<span class="visually-hidden">, {{ l.label }} logo</span>
                 </a>
               </div>
@@ -590,7 +592,7 @@ async function share() {
 
 .mp-logo-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
   gap: 1rem;
   margin: 0;
   padding: 0;
@@ -623,7 +625,8 @@ async function share() {
   height: auto;
 }
 
-.mp-logo.is-square .mp-logo-art img {
+.mp-logo.is-square .mp-logo-art img,
+.mp-logo.is-square-malayalam .mp-logo-art img {
   width: min(100%, 10rem);
 }
 
