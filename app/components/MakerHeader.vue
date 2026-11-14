@@ -55,6 +55,21 @@ const links = [
 
 const activeId = ref<string>('top')
 const activeIndex = computed(() => Math.max(0, links.findIndex(l => l.id === activeId.value)))
+const current = computed(() => links[activeIndex.value]!)
+const lastN = links[links.length - 1]!.n
+/** How far along the route the reader is, 0..1, for the progress line. */
+const progress = computed(() => activeIndex.value / (links.length - 1))
+
+/**
+ * The stations used to be ten numbered balloons in the rail itself. They are
+ * now one counter (current / last, the section's name, a progress line) so the
+ * rail has room for the Badge key at every width; the counter opens the list
+ * of sections as a native popover (light dismiss and Esc come with it).
+ */
+const sections = ref<HTMLElement | null>(null)
+function closeSections() {
+  sections.value?.hidePopover?.()
+}
 
 const { enabled: soundOn, toggle: toggleSound } = usePanelSound()
 
@@ -118,13 +133,25 @@ onUnmounted(() => {
 <template>
   <div class="rail-wrap">
     <nav id="primary-nav" class="rail" aria-label="Primary">
-      <!-- The route in miniature: the same stations as the page, in the same
-           order, the current one inked. Names show on hover and focus. -->
-      <ol class="rail-route">
+      <button
+        type="button"
+        class="rail-where"
+        popovertarget="rail-sections"
+        data-key-sound
+      >
+        <span class="visually-hidden">Section </span>
+        <span class="rail-count"><span class="rail-cur">{{ current.n }}</span> / {{ lastN }}</span>
+        <span class="rail-title">{{ current.label }}</span>
+        <span class="rail-bar" aria-hidden="true">
+          <span class="rail-bar-fill" :style="{ transform: `scaleX(${progress})` }" />
+        </span>
+      </button>
+
+      <!-- The route: the same stations as the page, in the same order. -->
+      <ol id="rail-sections" ref="sections" class="rail-sections" popover aria-label="Sections">
         <li
           v-for="(l, i) in links"
           :key="l.id"
-          class="rail-stop"
           :class="{ 'is-past': i < activeIndex, 'is-lit': i === activeIndex }"
         >
           <a
@@ -132,14 +159,17 @@ onUnmounted(() => {
             class="rail-stn"
             data-key-sound
             :aria-current="i === activeIndex ? 'location' : undefined"
+            @click="closeSections"
           >
             <span class="rail-n" aria-hidden="true">{{ l.n }}</span>
-            <span class="rail-name">{{ l.label }}</span>
+            <span>{{ l.label }}</span>
           </a>
         </li>
       </ol>
 
-      <a href="/interestform" class="key key-red rail-cta">Get Involved</a>
+      <a href="/media-pack" class="key rail-key"><span class="rail-wide">Make your&nbsp;</span>badge</a>
+
+      <a href="/interestform" class="key key-red rail-key">Get Involved</a>
 
       <button
         v-if="motion !== 'reduced'"
@@ -211,46 +241,111 @@ onUnmounted(() => {
   box-shadow: 0 1px 2px rgba(34, 34, 34, 0.06), 0 10px 28px rgba(34, 34, 34, 0.12);
 }
 
-/* ── The route ── */
-.rail-route {
-  display: flex;
-  align-items: center;
-  margin: 0 0.25rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rail-stop {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-/* The hairline from the previous stop: inked once passed, dashed ahead. */
-.rail-stop + .rail-stop::before {
-  content: '';
-  width: 10px;
-  height: 0;
-  border-top: 1px dashed var(--pn-faint);
-}
-
-.rail-stop.is-past + .rail-stop::before {
-  border-top: 1px solid var(--pn-ink);
-}
-
-/* A 26x36 hit area around a 22px balloon (WCAG 2.5.8 asks 24px). */
-.rail-stn {
-  position: relative;
+/* ── Where you are: counter, section name, progress line ── */
+.rail-where {
   display: grid;
-  place-items: center;
-  width: 26px;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto 3px;
+  align-content: center;
+  column-gap: 0.6rem;
+  row-gap: 5px;
   height: 36px;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--pn-ink);
+  font: 600 11px/1 var(--font-readout);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rail-where:hover {
+  border-color: var(--pn-ink);
+}
+
+.rail-where:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rail-count {
+  color: var(--pn-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-cur {
+  color: var(--field-blue);
+  font-weight: 700;
+}
+
+/* A fixed width, so the strip does not shift as the name changes. */
+.rail-title {
+  width: 168px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.rail-bar {
+  grid-column: 1 / -1;
+  height: 3px;
+  background: rgba(43, 25, 217, 0.16);
+  overflow: hidden;
+}
+
+.rail-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--field-blue);
+  transform-origin: 0 50%;
+  transition: transform 320ms var(--ease-out);
+}
+
+/* ── The list of sections (a popover above the strip) ── */
+.rail-sections {
+  position: fixed;
+  inset: auto auto calc(64px + env(safe-area-inset-bottom)) 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100svh - 80px);
+  margin: 0;
+  padding: 0.375rem;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--pn-enamel);
+  color: var(--pn-ink);
+  border: 1px solid var(--pn-ink);
+  box-shadow: 0 1px 2px rgba(34, 34, 34, 0.06), 0 10px 28px rgba(34, 34, 34, 0.12);
+}
+
+.rail-stn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 40px;
+  padding: 0 0.75rem 0 0.375rem;
+  color: var(--pn-ink);
+  font: 500 12px/1.3 var(--font-readout);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-decoration: none;
+}
+
+.rail-stn:hover {
+  background: rgba(34, 34, 34, 0.06);
+}
+
+.rail-stn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
 }
 
 .rail-n {
   display: grid;
+  flex: none;
   place-items: center;
   width: 22px;
   height: 22px;
@@ -260,7 +355,6 @@ onUnmounted(() => {
   color: var(--field-blue);
   font: 700 9.5px/1 var(--font-readout);
   letter-spacing: 0;
-  transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out);
 }
 
 .is-past .rail-n {
@@ -269,48 +363,23 @@ onUnmounted(() => {
 }
 
 .is-lit .rail-n {
-  border-color: var(--field-blue);
   background: var(--field-yellow);
-  color: var(--field-blue);
   box-shadow: 0 0 0 2px var(--field-blue);
 }
 
-/* The station's name: a small boxed label above it on hover/focus. It stays
-   in the accessibility tree (opacity, not display) so it is the link's name. */
-.rail-name {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 10px);
-  padding: 3px 7px;
-  background: var(--pn-enamel);
-  border: 1px solid var(--pn-ink);
-  font: 500 11px/1.4 var(--font-readout);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translate(-50%, 4px);
-  pointer-events: none;
-  transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out);
-}
-
-.rail-stn:hover .rail-name,
-.rail-stn:focus-visible .rail-name {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.rail-stn:hover .rail-n {
-  border-color: var(--pn-ink);
-}
-
 /* ── Keys ── */
-.rail-cta {
+.rail-key {
+  gap: 0;
   min-height: 32px;
   padding: 0.45rem 0.85rem 0.35rem;
   font-size: 0.75rem;
   letter-spacing: 0.06em;
   white-space: nowrap;
+}
+
+.rail-key:not(.key-red) {
+  border-width: 1.5px;
+  color: var(--pn-ink);
 }
 
 .rail-icon {
@@ -361,9 +430,21 @@ onUnmounted(() => {
   }
 }
 
-/* A phone: the stations are the flexible part. They lose their connectors
-   and, on the narrowest screens, scroll sideways inside the strip, so the
-   Get Involved key and both toggles are always whole. */
+/* Room is short: the counter drops the section's name, then "Make your". */
+@media (max-width: 720px) {
+  .rail-title {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .rail-wide {
+    display: none;
+  }
+}
+
+/* A phone: the strip spans the screen and the counter takes the slack, so
+   its progress line grows and both keys and both toggles are always whole. */
 @media (max-width: 480px) {
   .rail-wrap {
     left: 8px;
@@ -374,45 +455,16 @@ onUnmounted(() => {
 
   .rail {
     gap: 0.25rem;
-    padding: 0 0.25rem 0 0.375rem;
+    padding: 0 0.25rem 0 0.25rem;
   }
 
-  .rail-route {
+  .rail-where {
     flex: 1 1 auto;
     min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
+    padding: 0 0.375rem;
   }
 
-  .rail-route::-webkit-scrollbar {
-    display: none;
-  }
-
-  .rail-stop + .rail-stop::before {
-    display: none;
-  }
-
-  /* No hover tooltips on touch; the name stays as the link's accessible name. */
-  .rail-name {
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    border: 0;
-  }
-
-  .rail-stn {
-    width: 24px;
-  }
-
-  .rail-n {
-    width: 20px;
-    height: 20px;
-    font-size: 9px;
-  }
-
-  .rail-cta {
+  .rail-key {
     padding: 0.45rem 0.55rem 0.35rem;
     font-size: 0.6875rem;
     letter-spacing: 0.03em;
@@ -422,6 +474,12 @@ onUnmounted(() => {
   .rail-icon[role='switch'] {
     width: 28px;
     min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-bar-fill {
+    transition: none;
   }
 }
 </style>
