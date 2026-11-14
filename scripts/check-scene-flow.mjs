@@ -3,10 +3,11 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { chromium } from 'playwright-core'
+import { chromePath } from './chrome-path.mjs'
 
 await mkdir('artifacts', { recursive: true })
 const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  executablePath: chromePath(),
   args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
 })
 const base = process.argv[2] || 'http://localhost:3000'

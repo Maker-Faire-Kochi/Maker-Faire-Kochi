@@ -1,9 +1,10 @@
 // Verify the production integration while intercepting all analytics requests.
 import assert from 'node:assert/strict'
 import { chromium } from 'playwright-core'
+import { chromePath } from './chrome-path.mjs'
 
 const base = process.argv[2] || 'http://127.0.0.1:3001'
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' })
+const browser = await chromium.launch({ executablePath: chromePath() })
 try {
   const page = await browser.newPage({ reducedMotion: 'reduce' })
   const requests = []

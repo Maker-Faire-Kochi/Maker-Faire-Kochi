@@ -10,16 +10,16 @@
 // Text is measured per text node with a Range (an element's own box spans its
 // container, so it would hide the overflow). Exit 1 on any finding.
 import { chromium } from 'playwright-core'
+import { chromePath } from './chrome-path.mjs'
 
 const args = process.argv.slice(2)
 const baseAt = args.indexOf('--base')
 const base = baseAt === -1 ? 'http://localhost:3000' : args[baseAt + 1]
 const SIZES = [[320, 640], [375, 667], [390, 844], [414, 896], [768, 1024], [900, 700], [1024, 768], [1280, 800], [1366, 768], [1440, 900], [1920, 1080], [2560, 1080], [3840, 2160]]
-const PAGES = ['/', '/interestform', '/volunteer', '/media-pack']
+const PAGES = ['/', '/interestform', '/volunteer', '/media-pack', '/some-missing-page']
 const BOXES = '.chapter-panel, .stall-board, .hero-copy, .chapter-dock, .hero-under, .footer-container, .wrap'
 
-const CHROME = process.env.CHROME_PATH
-  || (process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome')
+const CHROME = chromePath()
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] })
 let failures = 0
 for (const path of PAGES) for (const [w, h] of SIZES) {

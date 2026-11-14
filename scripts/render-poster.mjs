@@ -18,6 +18,7 @@ import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import sharp from 'sharp'
+import { chromePath } from './chrome-path.mjs'
 
 // The chapters' boxes stop at the dock's top, as the page measures them (SceneChapter.vue): about
 // 0.74 of a 16:10 desktop's height. On a phone the drawing holds the screen above the chapter's
@@ -42,8 +43,7 @@ const base = baseAt === -1 ? 'http://localhost:3000' : args[baseAt + 1]
 const only = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--base')
 const names = only.length ? only : Object.keys(SCENES)
 
-const CHROME = process.env.CHROME_PATH
-  || (process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome')
+const CHROME = chromePath()
 const out = new URL('../public/img/scenes/', import.meta.url)
 await mkdir(out, { recursive: true })
 

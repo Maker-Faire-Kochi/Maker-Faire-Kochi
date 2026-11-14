@@ -102,17 +102,40 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
 - **Media pack** (`/media-pack`, `modules/media-pack/`, form layout): an "I'm going / exhibiting /
   volunteering" share card drawn straight onto a 1080x1080 canvas (`draw.ts`: Field, Poster,
   Badge), so the preview IS the PNG; the photo is an object URL and never leaves the device.
-  Dragging the photo has buttons + arrow keys too. Badge is the default: in the PREVIEW it hangs on
-  its lanyard (drops in, swings when tapped or brushed; two damped springs, follows `useMotion`),
-  but the PNG is always drawn straight and still. Its QR (`qrcode-generator`, only in this page's
+  Dragging the photo has buttons + arrow keys too. Badge is the default and, in the PREVIEW, a real
+  pendulum on its lanyard (`hang` in `MediaPack.vue`; `swing`/`drop` inputs and `PIVOT_Y` in `draw.ts`;
+  follows `useMotion`). It drops in, you pull it by the card (anywhere OFF the photo; the pointer angle
+  about the hook drives it and a release keeps the speed), a tap or the "Swing the badge" key pushes it.
+  **The photo and the badge never fight:** a press that starts on the photo (hit-tested through the
+  card's swing) is only ever a crop, and while cropping (drag, zoom, nudge, keys) the badge is eased to
+  rest (critically damped, ~0.4 s). Hovering does nothing (brushing past used to shake it and was removed
+  on the owner's request: do not bring that back). The PNG is always drawn straight and still
+  (`paint(true)`). Poster is YELLOW (blue headline, blue stripe, red date, blue name tag). The
+  Malayalam logo variant was removed. Its QR (`qrcode-generator`, only in this page's
   chunk) encodes https://makerfaire.in; check it still decodes after a layout change. Names are
   set by `layoutName`: the first word big, the rest smaller under it (owner's pick, after the
   Shenzhen pack), every line fitted (a long second word once ran off the badge). The Poster
   carries the Indian flag (`drawIndianFlag`, 3:2, 24-spoke chakra, 220px wide) under its headline. Eggs: Konami = foiled
   ALL ACCESS badge, five quick taps = coir rope strap, name "Makey" = MASCOT. The official logos (long, border, square; PNG +
-  PDF, as supplied) are in `public/media-pack/logos/`, plus a square one with Kochi in Malayalam
-  (only a 460px PNG, the GitHub org avatar; swap in the source file when it exists). Linked from the
+  PDF, as supplied) are in `public/media-pack/logos/`. The Malayalam square variant was removed
+  (2026-11) on the owner's request. Linked from the
   footer ("Spread the word").
+- **Missing page** (`error.vue`, `MakeyFacepalm.vue`, `three/scenes/makey404.ts`, `three/robots/makey/facepalm.ts`):
+  the owner's joke. Campaign YELLOW field, NO header bar (just the real lockup as a link, like the landing),
+  "404 · Page not found", a blue Dela Gothic caps headline ("We ran out of tokens, so we stopped."), a blue
+  sticker punchline ("We'll ask a maker to complete this."), "No content here...", and a live Makey that looks
+  at the page, hits his own head, shakes his head slowly and resets (12 s loop, `facepalm.ts`, tested by
+  `npm run test:facepalm`). It mounts through `<ThreeSceneSlot scene="makey404">` outside the layouts; reduced
+  motion, Save-Data and no-WebGL get the slot's SVG poster; the Pause key stays. The blue strip at the foot is
+  the landing's yellow-then-blue rhythm, NOT `MakerFooter` (its links are `#anchors` that only exist on the
+  homepage). On phones the copy column is `display: contents` so Makey sits between the words and the buttons.
+  The entrance animations' Pause/reduced overrides live in an UNSCOPED `<style>` block: a scoped `:global()`
+  drops the descendant half of the selector. The owner asked for the earlier meme cards, tape and captions to
+  go: do not re-add them. Only the 404 case changed; other errors keep the old sheet.
+- **Pointer** (`main.css`, "The pointer"): an angular ink arrow with a white keyline, red with a yellow pin over
+  anything pressable. Mouse only (`hover: hover` and `pointer: fine`); text fields keep the I-beam. Hotspot (5, 3).
+- **Browser scripts find Chrome themselves** (`scripts/chrome-path.mjs`): `CHROME_PATH`, else Playwright's
+  Chrome for Testing (`npx playwright-core install chromium`), else a system Chrome.
 - **One WebGL renderer** (`core/stage.ts`, multiple-scenes pattern, scissor per slot, only visible
   slots simulate). `<ThreeSceneSlot>` SSRs a poster `<picture>` and imports three.js after load +
   idle; reduced motion, Save-Data and no-WebGL never import it.

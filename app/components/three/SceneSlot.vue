@@ -302,6 +302,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="root" class="scene-slot" :data-scene="scene">
+    <div v-if="$slots.default" class="scene-poster" :class="{ 'is-hidden': !showPoster }"><slot /></div>
     <picture v-if="poster" class="scene-poster" :class="{ 'is-hidden': !showPoster }">
       <!-- Art-directed: below 768px the phone composition (4:3, the phone cast)
            is a different drawing, so it is chosen by media, not by width. -->
