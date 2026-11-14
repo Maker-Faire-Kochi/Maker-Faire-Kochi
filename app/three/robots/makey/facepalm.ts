@@ -46,12 +46,21 @@ export function facepalmPose(time: number, p: MakeyPose) {
   return p
 }
 
+/** The still the 404's poster shows, and where the live loop starts: hand on his head, a beat before the shake. */
+export const FACEPALM_POSTER_T = FACEPALM.smack + 0.4
+
 export class MakeyFacepalm {
-  readonly cur = facepalmPose(0, newPose())
-  readonly prev = facepalmPose(0, newPose())
+  readonly cur: MakeyPose
+  readonly prev: MakeyPose
   private ticks = 0
+  /** `start` is seconds into the loop: the live scene begins on the poster's own frame, so the hand-over cannot be seen. */
+  constructor(private readonly start = 0) {
+    this.cur = facepalmPose(start, newPose())
+    this.prev = facepalmPose(start, newPose())
+  }
+
   step(dt: number) {
     copyPose(this.cur, this.prev)
-    facepalmPose(++this.ticks * dt, this.cur)
+    facepalmPose(this.start + ++this.ticks * dt, this.cur)
   }
 }

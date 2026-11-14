@@ -511,17 +511,10 @@ function go(path: string) {
 .err-logo-link { display: block; width: fit-content; margin-bottom: 1.5rem; }
 .err-logo { display: block; width: min(13.75rem, 60vw); height: auto; }
 
-/* ── Entrance (its Pause / reduced-motion overrides are in the unscoped block at the foot) ── */
-@keyframes err-rise { from { opacity: 0; transform: translateY(0.9rem); } to { opacity: 1; transform: none; } }
-.err-missing .err-title-box, .err-missing .err-actions, .err-missing .facepalm {
-  animation: err-rise 520ms var(--ease-out, ease-out) both;
-}
-.err-missing .facepalm { animation-delay: 140ms; }
-.err-missing .err-actions { animation-delay: 260ms; }
 </style>
 
 <!-- Unscoped on purpose: a scoped :global() drops the descendant part of a selector. -->
 <style>
-html[data-motion='paused'] .err-missing :is(.err-title-box, .err-actions, .facepalm, .err-punch) { animation-play-state: paused; }
-html[data-motion='reduced'] .err-missing :is(.err-title-box, .err-actions, .facepalm, .err-punch) { animation: none; }
+html[data-motion='paused'] .err-missing .err-punch { animation-play-state: paused; }
+html[data-motion='reduced'] .err-missing .err-punch { animation: none; }
 </style>

@@ -125,8 +125,13 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   "404 · Page not found", a blue Dela Gothic caps headline ("We ran out of tokens, so we stopped."), a blue
   sticker punchline ("We'll ask a maker to complete this."), "No content here...", and a live Makey that looks
   at the page, hits his own head, shakes his head slowly and resets (12 s loop, `facepalm.ts`, tested by
-  `npm run test:facepalm`). It mounts through `<ThreeSceneSlot scene="makey404">` outside the layouts; reduced
-  motion, Save-Data and no-WebGL get the slot's SVG poster; the Pause key stays. The blue strip at the foot is
+  `npm run test:facepalm`). It mounts through `<ThreeSceneSlot scene="makey404">` outside the layouts, in a fixed
+  SQUARE slot. **No 2D-then-3D pop:** the poster (`public/img/scenes/makey404-*`, rendered from the scene by
+  `npm run posters -- makey404`; regenerate it if Makey or the pose changes) is the pose at `FACEPALM_POSTER_T`, and
+  the live loop STARTS at that same frame (`new MakeyFacepalm(FACEPALM_POSTER_T)`), so the hand-over is invisible
+  (under 1% of pixels differ). The square slot is what lets one square render match the live canvas at any size.
+  The 3D code is fetched on mount, not after idle. Reduced motion, Save-Data and no-WebGL keep the poster; the
+  Pause key stays. Headline and buttons never wait on an entrance fade (only the sticker pops). The blue strip at the foot is
   the landing's yellow-then-blue rhythm, NOT `MakerFooter` (its links are `#anchors` that only exist on the
   homepage). On phones the copy column is `display: contents` so Makey sits between the words and the buttons.
   The entrance animations' Pause/reduced overrides live in an UNSCOPED `<style>` block: a scoped `:global()`

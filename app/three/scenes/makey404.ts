@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { addLights, contactShadow, fitOrtho } from '../core/kit'
 import type { SceneFactory } from '../core/stage'
-import { FACEPALM, MakeyFacepalm, facepalmPose } from '../robots/makey/facepalm'
+import { FACEPALM_POSTER_T, MakeyFacepalm, facepalmPose } from '../robots/makey/facepalm'
 import { NQ, lerpPose, newPose, poseJoints } from '../robots/makey/gait'
 import { buildMakey, createSkeleton, poseSkeleton } from '../robots/makey/model'
 
@@ -17,13 +17,13 @@ const create: SceneFactory = (ctx) => {
   const shadow = contactShadow(ctx.materials, 0.15)
   shadow.position.y = 0.0005
   scene.add(shadow)
-  const motion = new MakeyFacepalm()
+  const motion = new MakeyFacepalm(FACEPALM_POSTER_T)
   const pose = newPose(), q = new Array(NQ).fill(0)
   return {
     scene, camera,
     step(dt) { if (!ctx.posterMode) motion.step(dt) },
     frame(alpha) {
-      if (ctx.posterMode) facepalmPose(FACEPALM.smack + 0.4, pose)
+      if (ctx.posterMode) facepalmPose(FACEPALM_POSTER_T, pose)
       else lerpPose(motion.prev, motion.cur, alpha, pose)
       poseJoints(pose, q)
       poseSkeleton(sk, pose, q)
