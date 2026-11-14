@@ -7,29 +7,33 @@
  * Every pointer interaction has a control: drag the photo, or use the nudge keys
  * (and the arrow keys on the focused preview); pinch-free zoom is the slider.
  *
- * The Badge (the default) hangs still on its lanyard. It used to swing when tapped
- * or brushed, which shook the photo while it was being dragged into place, so it
- * was removed (2026-11). Eggs: the Konami code foils the badge ALL ACCESS, five quick
+ * The Badge (the default) hangs on its lanyard in the preview and is a real pendulum:
+ * it drops in, you can grab the card (anywhere off the photo) and pull it, and it
+ * swings on from your release; a tap, or the Swing button, pushes it. The photo and
+ * the badge never fight: a drag that starts on the photo only moves the photo, and
+ * while you crop (drag, zoom, nudge) the badge is damped to rest, so the photo is
+ * never a moving target. Hovering does nothing. Preview only, and it follows
+ * useMotion (reduced motion or the Pause key: it hangs still); the PNG is always drawn
+ * straight and still. Eggs: the Konami code foils the badge ALL ACCESS, five quick
  * taps on the card swap the strap for coir rope, and the name "Makey" gets a mascot pass.
  */
 import { EVENT } from '~/composables/useCountdown'
-import { drawCard, photoFit, photoFrame, ROLES, SIZE, type CardState, type Design, type Role } from '../draw'
+import { useMotion } from '~/composables/useMotion'
+import { drawCard, photoFit, photoFrame, PIVOT_Y, ROLES, SIZE, type CardState, type Design, type Role } from '../draw'
 
 const DESIGNS: { value: Design, label: string, note: string }[] = [
   { value: 'badge', label: 'Badge', note: 'A lanyard pass' },
   { value: 'field', label: 'Field', note: 'Yellow, photo framed' },
-  { value: 'poster', label: 'Poster', note: 'Blue, photo full height' },
+  { value: 'poster', label: 'Poster', note: 'Yellow, photo full height' },
 ]
 const ROLE_LIST = Object.entries(ROLES).map(([value, r]) => ({ value: value as Role, label: r.label }))
 const NAME_MAX = 40
 
 /** The official lockups, as supplied (public/media-pack/logos). PNGs are 4K-wide. */
 const LOGOS = [
-  { key: 'long', label: 'Long', note: 'One line, 3871 × 646', w: 960, h: 160, pdf: true, ml: '', alt: '' },
-  { key: 'border', label: 'Border', note: 'One line, framed, 4092 × 859', w: 960, h: 202, pdf: true, ml: '', alt: '' },
-  { key: 'square', label: 'Square', note: 'Stacked, 1667 × 1667', w: 480, h: 480, pdf: true, ml: '', alt: '' },
-  /* Kochi in Malayalam. Only a 460px PNG exists so far (the GitHub avatar): no PDF. */
-  { key: 'square-malayalam', label: 'Square, Malayalam', ml: 'കൊച്ചി', note: '460 × 460, for profile pictures', w: 460, h: 460, pdf: false, alt: 'Maker Faire Kochi logo, square, with Kochi written in Malayalam' },
+  { key: 'long', label: 'Long', note: 'One line, 3871 × 646', w: 960, h: 160 },
+  { key: 'border', label: 'Border', note: 'One line, framed, 4092 × 859', w: 960, h: 202 },
+  { key: 'square', label: 'Square', note: 'Stacked, 1667 × 1667', w: 480, h: 480 },
 ]
 
 const design = ref<Design>('badge')
@@ -45,6 +49,9 @@ const canShare = ref(false)
 const busy = ref(false)
 const foil = ref(false)
 const coir = ref(false)
+
+const { state: motion, init: initMotion, toggle: toggleMotion } = useMotion()
+const animate = () => motion.value === 'running'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -63,21 +70,105 @@ const state = (): CardState => ({
   coir: coir.value,
 })
 
-function paint() {
-  const ctx = canvas.value?.getContext('2d')
-  if (ctx) drawCard(ctx, state())
+// ── The badge on its lanyard: a damped pendulum, plus a spring for the drop ──
+const SWING_MAX = 0.6
+const hang = { swing: 0, spin: 0, drop: 0, fall: 0 }
+let held = false // a hand has the card: the angle chases `pull`
+let pull = 0
+let cropping = false // a drag on the photo is under way
+let calmUntil = 0 // after any crop move, the badge is damped to rest until then
+let lastT = 0
+let frame = 0
+
+const calming = () => cropping || performance.now() < calmUntil
+
+function settled() {
+  // Held still in a hand counts too: nothing moves until the hand does.
+  return Math.abs(hang.swing - (held ? pull : 0)) < 0.0008 && Math.abs(hang.spin) < 0.002
+    && Math.abs(hang.drop) < 0.5 && Math.abs(hang.fall) < 2
 }
 
-let frame = 0
+function paint(still = false) {
+  const ctx = canvas.value?.getContext('2d')
+  if (ctx) drawCard(ctx, still ? state() : { ...state(), swing: hang.swing, drop: hang.drop })
+}
+
+function step(t: number) {
+  frame = 0
+  const dt = Math.min(0.033, lastT ? (t - lastT) / 1000 : 0.016)
+  lastT = t
+  if (design.value === 'badge' && animate()) {
+    // Fixed small sub-steps keep the springs stable on a slow frame.
+    for (let left = dt; left > 0; left -= 0.004) {
+      const h = Math.min(0.004, left)
+      if (held) {
+        // A critically damped chase of the hand: smooth, and a release keeps the speed.
+        hang.spin += (900 * (pull - hang.swing) - 60 * hang.spin) * h
+      }
+      else if (calming()) {
+        // Cropping: a firm, critically damped ease to rest (no bounce), done in about 0.4 s.
+        hang.spin += (-260 * hang.swing - 32 * hang.spin) * h
+      }
+      else {
+        // g/L = 26: a ~1.2 s swing, lightly damped.
+        hang.spin += (-26 * Math.sin(hang.swing) - 1.8 * hang.spin) * h
+      }
+      hang.swing += hang.spin * h
+      hang.fall += (-150 * hang.drop - 17 * hang.fall) * h
+      hang.drop += hang.fall * h
+    }
+    hang.swing = Math.max(-SWING_MAX, Math.min(SWING_MAX, hang.swing))
+  }
+  else {
+    held = false
+    Object.assign(hang, { swing: 0, spin: 0, drop: 0, fall: 0 })
+  }
+  const rest = settled()
+  // At rest it hangs exactly straight, not a hair off.
+  if (rest) Object.assign(hang, { swing: held ? pull : 0, spin: 0, drop: 0, fall: 0 })
+  paint()
+  if (!rest && design.value === 'badge' && animate()) frame = requestAnimationFrame(step)
+  else lastT = 0
+}
+
 function redraw() {
   if (frame) return
-  frame = requestAnimationFrame(() => {
-    frame = 0
-    paint()
-  })
+  frame = requestAnimationFrame(step)
 }
 
-watch([design, role, name, zoom, panX, panY, photo, logo, foil, coir], redraw)
+/** Drop the badge in from above, already swinging a little. */
+function dropIn() {
+  if (design.value !== 'badge' || !animate()) return redraw()
+  Object.assign(hang, { swing: 0.04, spin: 0.5, drop: -SIZE * 0.85, fall: 0 })
+  redraw()
+}
+
+/** A push. `force` skips the crop guard: the Swing key is asked for. */
+function flick(amount: number, force = false) {
+  if (design.value !== 'badge' || !animate() || (!force && calming())) return
+  if (force) calmUntil = 0
+  hang.spin = Math.max(-2.4, Math.min(2.4, hang.spin + amount))
+  redraw()
+}
+
+let side = 1
+function shake() {
+  design.value = 'badge'
+  if (!animate()) {
+    status.value = motion.value === 'reduced'
+      ? 'Your device asks for reduced motion, so the badge hangs still.'
+      : 'Motion is paused, so the badge hangs still. Press Play motion to let it swing.'
+    return
+  }
+  side = -side
+  flick(2.2 * side, true)
+  status.value = 'The badge swings.'
+}
+
+watch([role, name, zoom, panX, panY, photo, logo, foil, coir, motion], redraw)
+watch(design, dropIn)
+// Any crop move calms the badge, so the photo is never a moving target.
+watch([zoom, panX, panY], () => { calmUntil = performance.now() + 700 })
 watch(name, (n) => {
   if (n.trim().toUpperCase() === 'MAKEY') status.value = 'Makey gets the mascot pass.'
 })
@@ -94,7 +185,8 @@ onMounted(async () => {
   img.onload = () => { logo.value = img }
   img.src = '/img/logo/mf-kochi-long.png'
 
-  redraw()
+  initMotion()
+  dropIn()
   window.addEventListener('keydown', onWindowKey)
   // The fonts arrive after first paint (the print-media swap): redraw as they land.
   try {
@@ -192,6 +284,7 @@ function onWindowKey(e: KeyboardEvent) {
   keys = []
   foil.value = !foil.value
   if (foil.value) design.value = 'badge'
+  flick(1.4, true)
   status.value = foil.value ? 'All access. The badge is foiled.' : 'The foil is off.'
 }
 
@@ -205,22 +298,97 @@ function countTap() {
   status.value = coir.value ? 'A coir rope lanyard, twisted by hand.' : 'Back to the red lanyard.'
 }
 
-let drag: { id: number, x: number, y: number } | null = null
+type Drag = { id: number, mode: 'photo' | 'swing', x: number, y: number, ang0: number, base: number, moved: number }
+let drag: Drag | null = null
+const cursor = ref('')
+
+/** Pointer in canvas pixels. */
+function toCanvas(e: PointerEvent) {
+  const r = canvas.value!.getBoundingClientRect()
+  return { px: (e.clientX - r.left) * (SIZE / r.width), py: (e.clientY - r.top) * (SIZE / r.height) }
+}
+
+/** Is the pointer on the photo? On the badge the card is swung and dropped, so undo that first. */
+function overPhoto(px: number, py: number) {
+  if (!photo.value) return false
+  if (design.value !== 'badge') return true
+  const oy = PIVOT_Y + hang.drop
+  const c = Math.cos(-hang.swing)
+  const s = Math.sin(-hang.swing)
+  const dx = px - SIZE / 2
+  const dy = py - oy
+  const x = SIZE / 2 + dx * c - dy * s
+  const y = PIVOT_Y + dx * s + dy * c
+  const f = photoFrame('badge')
+  return x >= f.x - 8 && x <= f.x + f.w + 8 && y >= f.y - 8 && y <= f.y + f.h + 8
+}
+
+/** The angle of the pointer about the hook, so dragging the card pulls the pendulum. */
+const hookAngle = (px: number, py: number) => Math.atan2(px - SIZE / 2, py - (PIVOT_Y + hang.drop))
+
 function onDown(e: PointerEvent) {
   countTap()
-  if (!photo.value) return
-  drag = { id: e.pointerId, x: e.clientX, y: e.clientY }
+  const { px, py } = toCanvas(e)
+  const base = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 }
+  if (overPhoto(px, py)) {
+    // On the photo a drag is only ever a crop. The badge is calmed and left alone.
+    drag = { ...base, mode: 'photo', ang0: 0, base: 0 }
+    cropping = true
+    cursor.value = 'grabbing'
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    redraw()
+    return
+  }
+  if (design.value !== 'badge' || !animate()) return
+  // Anywhere else on the badge: take hold of the card.
+  drag = { ...base, mode: 'swing', ang0: hookAngle(px, py), base: hang.swing }
+  held = true
+  pull = hang.swing
+  cursor.value = 'grabbing'
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  redraw()
 }
 function onMove(e: PointerEvent) {
-  if (!drag || drag.id !== e.pointerId || !canvas.value) return
-  const scale = SIZE / canvas.value.getBoundingClientRect().width
-  panBy((e.clientX - drag.x) * scale, (e.clientY - drag.y) * scale)
+  if (!canvas.value) return
+  if (!drag || drag.id !== e.pointerId) {
+    // Hovering changes nothing but the cursor.
+    const { px, py } = toCanvas(e)
+    cursor.value = overPhoto(px, py) ? 'move' : (design.value === 'badge' && animate()) || photo.value ? 'grab' : ''
+    return
+  }
+  drag.moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y)
+  if (drag.mode === 'photo') {
+    const scale = SIZE / canvas.value.getBoundingClientRect().width
+    panBy((e.clientX - drag.x) * scale, (e.clientY - drag.y) * scale)
+  }
+  else {
+    const { px, py } = toCanvas(e)
+    // A hand to the right of the hook sends the card's foot to the right (negative angle).
+    pull = Math.max(-SWING_MAX, Math.min(SWING_MAX, drag.base - (hookAngle(px, py) - drag.ang0)))
+    redraw()
+  }
   drag.x = e.clientX
   drag.y = e.clientY
 }
-function onUp() {
+function onUp(e: PointerEvent) {
+  if (!drag || drag.id !== e.pointerId) return
+  if (drag.mode === 'swing') {
+    held = false
+    hang.spin = Math.max(-5, Math.min(5, hang.spin))
+    if (drag.moved < 8 && canvas.value) {
+      // A tap pushes the card away from the hand.
+      const v = (toCanvas(e).px - SIZE / 2) / (SIZE / 2)
+      flick((v < 0 ? -1 : 1) * (0.7 + Math.abs(v)))
+    }
+    redraw()
+  }
+  else {
+    cropping = false
+    calmUntil = performance.now() + 500
+  }
   drag = null
+  const { px, py } = toCanvas(e)
+  cursor.value = overPhoto(px, py) ? 'move' : ''
 }
 
 function onKey(e: KeyboardEvent) {
@@ -243,9 +411,13 @@ function fileName() {
 function toBlob(): Promise<Blob | null> {
   return new Promise((resolve) => {
     if (!canvas.value) return resolve(null)
-    // Draw synchronously first, so the file is never one frame behind the controls.
-    paint()
-    canvas.value.toBlob(resolve, 'image/png')
+    // Draw synchronously first, so the file is never one frame behind the controls --
+    // and straight and still: the swing and the drop belong to the preview only.
+    paint(true)
+    canvas.value.toBlob((blob) => {
+      paint()
+      resolve(blob)
+    }, 'image/png')
   })
 }
 
@@ -313,7 +485,8 @@ async function share() {
           <canvas
             ref="canvas"
             class="mp-canvas"
-            :class="{ 'is-draggable': !!photo }"
+            :class="{ 'is-draggable': !!photo, 'is-hung': design === 'badge' }"
+            :style="cursor ? { cursor } : undefined"
             :width="SIZE"
             :height="SIZE"
             role="img"
@@ -323,11 +496,20 @@ async function share() {
             @pointermove="onMove"
             @pointerup="onUp"
             @pointercancel="onUp"
+            @pointerleave="cursor = ''"
             @keydown="onKey"
           />
           <p class="mp-hint">
             {{ photo ? 'Drag the photo to move it. On a keyboard, focus the card and use the arrow keys.' : 'This is a placeholder. Add your photo to make it yours.' }}
+            <template v-if="design === 'badge'"> Pull the card to swing the badge.</template>
           </p>
+          <div v-if="design === 'badge'" class="mp-row mp-swing">
+            <button type="button" class="chip" @click="shake">Swing the badge</button>
+            <!-- This page has no rail, so the motion switch lives here too. -->
+            <button v-if="motion !== 'reduced'" type="button" class="chip" :aria-pressed="motion === 'paused'" @click="toggleMotion">
+              {{ motion === 'paused' ? 'Play motion' : 'Pause motion' }}
+            </button>
+          </div>
         </div>
 
         <div class="mp-controls">
@@ -432,7 +614,7 @@ async function share() {
                 :src="`/media-pack/logos/preview-${l.key}.webp`"
                 :width="l.w"
                 :height="l.h"
-                :alt="l.alt || `Maker Faire Kochi logo, ${l.label.toLowerCase()}`"
+                :alt="`Maker Faire Kochi logo, ${l.label.toLowerCase()}`"
                 loading="lazy"
                 decoding="async"
               />
@@ -440,13 +622,13 @@ async function share() {
             <div class="mp-logo-foot">
               <p class="mp-logo-name">
                 <strong>{{ l.label }}</strong>
-                <span><span v-if="l.ml" lang="ml">{{ l.ml }}, </span>{{ l.note }}</span>
+                <span>{{ l.note }}</span>
               </p>
               <div class="mp-row">
                 <a class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.png`" download>
                   PNG<span class="visually-hidden">, {{ l.label }} logo</span>
                 </a>
-                <a v-if="l.pdf" class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.pdf`" download>
+                <a class="key" :href="`/media-pack/logos/maker-faire-kochi-logo-${l.key}.pdf`" download>
                   PDF<span class="visually-hidden">, {{ l.label }} logo</span>
                 </a>
               </div>
@@ -497,6 +679,15 @@ async function share() {
   cursor: grab;
   /* While a photo is in, a finger on the card moves the photo, not the page. */
   touch-action: none;
+}
+
+/* No photo yet: the badge is pulled sideways, so a vertical swipe on it still scrolls the page. */
+.mp-canvas.is-hung:not(.is-draggable) {
+  touch-action: pan-y;
+}
+
+.mp-swing {
+  margin-top: 0.75rem;
 }
 
 .mp-canvas.is-draggable:active {
@@ -666,8 +857,7 @@ async function share() {
   height: auto;
 }
 
-.mp-logo.is-square .mp-logo-art img,
-.mp-logo.is-square-malayalam .mp-logo-art img {
+.mp-logo.is-square .mp-logo-art img {
   width: min(100%, 10rem);
 }
 

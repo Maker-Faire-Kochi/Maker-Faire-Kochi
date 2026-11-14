@@ -2,7 +2,7 @@
  * The media pack's share cards, drawn straight onto a 1080x1080 canvas so the
  * preview IS the download: no DOM-to-image step, nothing leaves the device.
  *
- * Three designs in the campaign's language: the yellow field, the blue poster
+ * Three designs in the campaign's language: the yellow field, the yellow poster
  * and a lanyard badge. Every design uses the real Maker Faire Kochi lockup on its
  * own plaque (never retypeset), Dela Gothic One for display and Inter for text,
  * and the facts from EVENT.
@@ -26,6 +26,9 @@ export interface CardState {
   /** Pan as a fraction of the slack on each axis, -1..1 (0 = centred). */
   panX: number
   panY: number
+  /** Badge only, preview only: the card's swing on its lanyard (radians) and its drop (px, <= 0). */
+  swing?: number
+  drop?: number
   /** Easter eggs (badge): Konami gives a holographic ALL ACCESS foil; five taps, a coir rope lanyard. */
   foil?: boolean
   coir?: boolean
@@ -65,8 +68,10 @@ const C = {
   paper: '#F6F6F3',
   white: '#FFFFFF',
   cyan: '#00AEEF',
-  onBlueLabel: '#D8D4FF',
 }
+
+/** The empty photo frame (the person placeholder sits on it in campaign blue), on every design. */
+const PHOTO_GROUND = '#CFE0FF'
 
 const DISPLAY = '"Dela Gothic One", "Arial Black", sans-serif'
 const TEXT = 'Inter, system-ui, sans-serif'
@@ -77,6 +82,9 @@ const DATE_LONG = `${EVENT.rangeStart.label}–${EVENT.rangeEnd.label}`.toUpperC
 const DATE_SHORT = '5–6 FEB 2027'
 const VENUE = EVENT.venueLabel.toUpperCase()
 const PLACE = EVENT.place.toUpperCase()
+
+/** The point the badge's lanyard hangs from, above the canvas (y, px). The page maps pointer to swing with it. */
+export const PIVOT_Y = -260
 
 export interface Frame { x: number, y: number, w: number, h: number }
 
@@ -136,7 +144,7 @@ function drawField(ctx: CanvasRenderingContext2D, st: CardState) {
 
   // The photo, framed in an ink hairline with cyan corner ticks.
   const f = photoFrame('field')
-  clipRect(ctx, f, () => drawPhoto(ctx, st, f, '#C9C3F5', C.white))
+  clipRect(ctx, f, () => drawPhoto(ctx, st, f, PHOTO_GROUND, C.blue))
   ctx.strokeStyle = C.ink
   ctx.lineWidth = 3
   ctx.strokeRect(f.x, f.y, f.w, f.h)
@@ -179,14 +187,14 @@ function drawField(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.textAlign = 'left'
 }
 
-// ── Design 2: the blue poster ──────────────────────────────────────────────
+// ── Design 2: the yellow poster ──────────────────────────────────────────────
 
 function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
   const role = ROLES[st.role]
-  ctx.fillStyle = C.blue
+  ctx.fillStyle = C.yellow
   ctx.fillRect(0, 0, SIZE, SIZE)
 
-  // The photo fills the right, cut on a diagonal with a yellow edge.
+  // The photo fills the right, cut on a diagonal with a blue edge.
   const f = photoFrame('poster')
   const edge = (y: number) => 660 - (y / SIZE) * 140 // x of the cut at height y
   ctx.save()
@@ -197,9 +205,9 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.lineTo(edge(SIZE), SIZE)
   ctx.closePath()
   ctx.clip()
-  drawPhoto(ctx, st, f, '#5A4BE3', '#8F86EE')
+  drawPhoto(ctx, st, f, PHOTO_GROUND, C.blue)
   ctx.restore()
-  ctx.strokeStyle = C.yellow
+  ctx.strokeStyle = C.blue
   ctx.lineWidth = 18
   ctx.beginPath()
   ctx.moveTo(edge(0) - 4, -10)
@@ -213,11 +221,10 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
   const lines = ['I’M', role.word, role.joiner, 'KOCHI!']
   const caps = [120, 130, 72, 130]
   let y = 180
-  ctx.fillStyle = C.yellow
   lines.forEach((line, i) => {
     const s = fitSize(ctx, line, DISPLAY, '400', colW, caps[i]!)
     ctx.font = `400 ${s}px ${DISPLAY}`
-    ctx.fillStyle = i === 2 ? C.white : C.yellow
+    ctx.fillStyle = i === 2 ? C.ink : C.blue
     y += s * 1.0
     ctx.fillText(line, 52, y)
     y += s * 0.12
@@ -235,12 +242,12 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.fillStyle = C.white
   ctx.fillText(DATE_SHORT, 80, SIZE - 188)
   ctx.font = `700 24px ${TEXT}`
-  ctx.fillStyle = C.white
+  ctx.fillStyle = C.blue
   ctx.fillText(VENUE, 56, SIZE - 112)
-  ctx.fillStyle = C.onBlueLabel
+  ctx.fillStyle = C.ink
   ctx.fillText(`${PLACE} · FREE ENTRY`, 56, SIZE - 76)
 
-  // The name, on a yellow tag over the photo.
+  // The name, on a blue tag over the photo.
   if (st.name.trim()) {
     const name = st.name.toUpperCase()
     ctx.font = `400 36px ${DISPLAY}`
@@ -248,9 +255,9 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
     ctx.font = `400 ${s}px ${DISPLAY}`
     const tw = ctx.measureText(name).width
     const tx = SIZE - 56 - tw - 48
-    ctx.fillStyle = C.yellow
-    ctx.fillRect(tx, SIZE - 136, tw + 48, 80)
     ctx.fillStyle = C.blue
+    ctx.fillRect(tx, SIZE - 136, tw + 48, 80)
+    ctx.fillStyle = C.yellow
     ctx.fillText(name, tx + 24, SIZE - 82)
   }
 }
@@ -259,7 +266,7 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
 
 function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   const role = ROLES[st.role]
-  // Paper with the site's dot grid.
+  // Paper with the site's dot grid. It stays still; the badge swings over it.
   ctx.fillStyle = C.paper
   ctx.fillRect(0, 0, SIZE, SIZE)
   ctx.fillStyle = 'rgba(34, 34, 34, 0.16)'
@@ -273,9 +280,12 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
 
   const card = { x: 190, y: 150, w: 700, h: 870 }
 
-  // The whole lanyard hangs from a point above the frame.
+  // The whole lanyard hangs from a point above the frame and swings about it.
   ctx.save()
-  const pivotY = -260
+  const pivotY = PIVOT_Y
+  ctx.translate(SIZE / 2, pivotY + (st.drop ?? 0))
+  ctx.rotate(st.swing ?? 0)
+  ctx.translate(-SIZE / 2, -pivotY)
 
   // The strap: red webbing, or (egg) a twisted coir rope.
   if (st.coir) {
@@ -317,7 +327,7 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
 
   // Photo.
   const f = photoFrame('badge')
-  clipRect(ctx, f, () => drawPhoto(ctx, st, f, '#C9C3F5', C.white))
+  clipRect(ctx, f, () => drawPhoto(ctx, st, f, PHOTO_GROUND, C.blue))
   ctx.strokeStyle = C.blue
   ctx.lineWidth = 6
   ctx.strokeRect(f.x, f.y, f.w, f.h)
@@ -366,12 +376,13 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.fillText('MAKERFAIRE.IN', card.x + 40, qy + qs - 4)
   drawQr(ctx, qx, qy, qs)
 
-  // Egg: a holographic foil over the whole card.
+  // Egg: a holographic foil over the whole card, its shine following the swing.
   if (st.foil) {
     ctx.save()
     roundRect(ctx, card.x, card.y, card.w, card.h, 28)
     ctx.clip()
-    const g = ctx.createLinearGradient(card.x, card.y, card.x + card.w, card.y + card.h)
+    const t = (st.swing ?? 0) * 900
+    const g = ctx.createLinearGradient(card.x + t, card.y, card.x + card.w + t, card.y + card.h)
     const hues = ['#FF5A5F', '#FFE86C', '#5CE1A0', '#00AEEF', '#8F86EE', '#FF5A5F']
     hues.forEach((h, i) => g.addColorStop(i / (hues.length - 1), h))
     ctx.globalAlpha = 0.28
@@ -380,7 +391,7 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
     ctx.fillRect(card.x, card.y, card.w, card.h)
     ctx.globalCompositeOperation = 'source-over'
     ctx.globalAlpha = 0.35
-    const sx = card.x + card.w * 0.5
+    const sx = card.x + card.w * 0.5 + t * 0.6
     const shine = ctx.createLinearGradient(sx - 160, card.y, sx + 160, card.y + 220)
     shine.addColorStop(0, 'rgba(255,255,255,0)')
     shine.addColorStop(0.5, 'rgba(255,255,255,0.9)')
@@ -441,11 +452,17 @@ function drawPhoto(ctx: CanvasRenderingContext2D, st: CardState, f: Frame, groun
     const cx = f.x + Math.min(f.w, 560) / 2 + (f.w > 560 ? (f.w - 560) / 2 + 40 : 0)
     const u = Math.min(f.w, f.h)
     ctx.fillStyle = figure
+    // Shoulders: a rounded bust that runs off the frame's foot, with air under the head.
+    const top = Math.max(f.y + f.h * 0.5 + u * 0.12, f.y + f.h - u * 0.62)
+    const half = u * 0.37
     ctx.beginPath()
-    ctx.arc(cx, f.y + f.h * 0.5 - u * 0.12, u * 0.16, 0, Math.PI * 2)
+    ctx.moveTo(cx - half, f.y + f.h)
+    ctx.bezierCurveTo(cx - half, top + u * 0.24, cx - half * 0.5, top, cx, top)
+    ctx.bezierCurveTo(cx + half * 0.5, top, cx + half, top + u * 0.24, cx + half, f.y + f.h)
+    ctx.closePath()
     ctx.fill()
     ctx.beginPath()
-    ctx.ellipse(cx, f.y + f.h * 0.5 + u * 0.34, u * 0.32, u * 0.3, 0, 0, Math.PI * 2)
+    ctx.arc(cx, top - u * 0.2, u * 0.15, 0, Math.PI * 2)
     ctx.fill()
     return
   }
