@@ -33,6 +33,8 @@ const SCENES = {
   electronics: { ...CHAPTER, focus: '0 0.6 0 0.7', phoneFocus: '0 1 0 0.61' },
   noise: { ...CHAPTER, phoneFocus: '0 1 0 0.7' },
   machines: { ...CHAPTER, phoneFocus: '0 1 0 0.59' },
+  // The 404's Makey sits in a fixed SQUARE slot, so one square render is exactly what the live canvas frames at any size.
+  makey404: { desktop: 1, focus: '', phone: 1, phoneFocus: '' },
 }
 const WIDTHS = [768, 1440, 2160]
 const PHONE_WIDTH = 430
