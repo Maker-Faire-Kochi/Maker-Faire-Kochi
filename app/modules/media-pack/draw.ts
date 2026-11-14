@@ -26,9 +26,6 @@ export interface CardState {
   /** Pan as a fraction of the slack on each axis, -1..1 (0 = centred). */
   panX: number
   panY: number
-  /** Badge only, preview only: the card's swing on its lanyard (radians) and its drop (px, <= 0). */
-  swing?: number
-  drop?: number
   /** Easter eggs (badge): Konami gives a holographic ALL ACCESS foil; five taps, a coir rope lanyard. */
   foil?: boolean
   coir?: boolean
@@ -262,7 +259,7 @@ function drawPoster(ctx: CanvasRenderingContext2D, st: CardState) {
 
 function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   const role = ROLES[st.role]
-  // Paper with the site's dot grid. It stays still; the badge swings over it.
+  // Paper with the site's dot grid.
   ctx.fillStyle = C.paper
   ctx.fillRect(0, 0, SIZE, SIZE)
   ctx.fillStyle = 'rgba(34, 34, 34, 0.16)'
@@ -276,12 +273,9 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
 
   const card = { x: 190, y: 150, w: 700, h: 870 }
 
-  // The whole lanyard hangs from a point above the frame and swings about it.
+  // The whole lanyard hangs from a point above the frame.
   ctx.save()
   const pivotY = -260
-  ctx.translate(SIZE / 2, pivotY + (st.drop ?? 0))
-  ctx.rotate(st.swing ?? 0)
-  ctx.translate(-SIZE / 2, -pivotY)
 
   // The strap: red webbing, or (egg) a twisted coir rope.
   if (st.coir) {
@@ -372,13 +366,12 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
   ctx.fillText('MAKERFAIRE.IN', card.x + 40, qy + qs - 4)
   drawQr(ctx, qx, qy, qs)
 
-  // Egg: a holographic foil over the whole card, its shine following the swing.
+  // Egg: a holographic foil over the whole card.
   if (st.foil) {
     ctx.save()
     roundRect(ctx, card.x, card.y, card.w, card.h, 28)
     ctx.clip()
-    const t = (st.swing ?? 0) * 900
-    const g = ctx.createLinearGradient(card.x + t, card.y, card.x + card.w + t, card.y + card.h)
+    const g = ctx.createLinearGradient(card.x, card.y, card.x + card.w, card.y + card.h)
     const hues = ['#FF5A5F', '#FFE86C', '#5CE1A0', '#00AEEF', '#8F86EE', '#FF5A5F']
     hues.forEach((h, i) => g.addColorStop(i / (hues.length - 1), h))
     ctx.globalAlpha = 0.28
@@ -387,7 +380,7 @@ function drawBadge(ctx: CanvasRenderingContext2D, st: CardState) {
     ctx.fillRect(card.x, card.y, card.w, card.h)
     ctx.globalCompositeOperation = 'source-over'
     ctx.globalAlpha = 0.35
-    const sx = card.x + card.w * 0.5 + t * 0.6
+    const sx = card.x + card.w * 0.5
     const shine = ctx.createLinearGradient(sx - 160, card.y, sx + 160, card.y + 220)
     shine.addColorStop(0, 'rgba(255,255,255,0)')
     shine.addColorStop(0.5, 'rgba(255,255,255,0.9)')

@@ -102,9 +102,9 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
 - **Media pack** (`/media-pack`, `modules/media-pack/`, form layout): an "I'm going / exhibiting /
   volunteering" share card drawn straight onto a 1080x1080 canvas (`draw.ts`: Field, Poster,
   Badge), so the preview IS the PNG; the photo is an object URL and never leaves the device.
-  Dragging the photo has buttons + arrow keys too. Badge is the default: in the PREVIEW it hangs on
-  its lanyard (drops in, swings when tapped or brushed; two damped springs, follows `useMotion`),
-  but the PNG is always drawn straight and still. Its QR (`qrcode-generator`, only in this page's
+  Dragging the photo has buttons + arrow keys too. Badge is the default and hangs STILL on its lanyard.
+  It used to swing when tapped or brushed, which shook the photo while it was being dragged into
+  place; the swing was removed (2026-11) on the owner's request -- do not bring it back. Its QR (`qrcode-generator`, only in this page's
   chunk) encodes https://makerfaire.in; check it still decodes after a layout change. Names are
   set by `layoutName`: the first word big, the rest smaller under it (owner's pick, after the
   Shenzhen pack), every line fitted (a long second word once ran off the badge). The Poster
