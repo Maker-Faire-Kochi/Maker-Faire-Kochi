@@ -8,6 +8,7 @@
 //              (draw calls, triangles, frame-time p50/p95) -- the perf gates.
 // --cpu N      Chrome CPU throttling rate during the sample (4 = the plan's mobile gate).
 import { chromium } from 'playwright-core'
+import { chromePath } from './chrome-path.mjs'
 
 const args = process.argv.slice(2)
 const [url, out] = args
@@ -22,8 +23,7 @@ const opt = (name, fallback) => {
 const flag = name => args.includes(`--${name}`)
 const pair = s => s?.split(',').map(Number)
 
-const CHROME = process.env.CHROME_PATH
-  || (process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome')
+const CHROME = chromePath()
 
 const browser = await chromium.launch({
   executablePath: CHROME,

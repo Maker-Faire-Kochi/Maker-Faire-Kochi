@@ -6,9 +6,10 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { chromium } from 'playwright-core'
+import { chromePath } from './chrome-path.mjs'
 
 const base = process.argv[2] || 'http://localhost:3000'
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' })
+const browser = await chromium.launch({ executablePath: chromePath() })
 await mkdir('artifacts', { recursive: true })
 /** The 2026-10 phone layout ran to 32 screens at 390x844; the story is about 22 there, 24 at 320x640. */
 const MAX_SCREENS = 25

@@ -4,9 +4,10 @@
 //   node scripts/check-scroll-anchor.mjs [http://localhost:3000]
 import assert from 'node:assert/strict'
 import { chromium } from 'playwright-core'
+import { chromePath } from './chrome-path.mjs'
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  executablePath: chromePath(),
   args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
 })
 try {
