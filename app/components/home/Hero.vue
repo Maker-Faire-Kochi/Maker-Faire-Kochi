@@ -297,7 +297,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
 .hero-logo {
   display: block;
   margin-bottom: auto;
-  cursor: default;
 }
 
 .hero-logo img {

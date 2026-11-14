@@ -431,6 +431,38 @@ body {
   overflow-x: hidden;
 }
 
+/* ── The pointer ───────────────────────────────────────────────────────────
+   A straight-beam arrow in the drawing's language: ink with a white keyline,
+   so it reads on paper, yellow, blue and ink fields alike. Over anything you
+   can press it turns the action red and carries a small yellow pin. Mouse
+   users only (a touch screen has no pointer); text fields keep the native
+   I-beam, and a disabled control keeps the plain arrow. The hotspot is the
+   arrow's tip (5, 3). */
+:root {
+  --cursor-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M5 3v19l5-4.6 3.4 7.6 3.6-1.6-3.4-7.4H20z' fill='%23222222' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, default;
+  --cursor-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M5 3v19l5-4.6 3.4 7.6 3.6-1.6-3.4-7.4H20z' fill='%23C4121A' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='19' y='19' width='6' height='6' fill='%23FFE86C' stroke='%23222222' stroke-width='1.5'/%3E%3C/svg%3E") 5 3, pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html {
+    cursor: var(--cursor-arrow);
+  }
+
+  a[href],
+  button:not(:disabled),
+  summary,
+  select:not(:disabled),
+  label[for],
+  [role='button'],
+  [role='switch'],
+  [role='tab'],
+  input:is([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='submit']):not(:disabled),
+  .key:not(:disabled),
+  .chip:not(:disabled) {
+    cursor: var(--cursor-link) !important;
+  }
+}
+
 :lang(ml) { font-family: var(--font-malayalam); }
 
 /* NOTE: font-family and line-height stay on this selector. Several headings
