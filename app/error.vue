@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
+import { CONTACT_EMAIL, EVENT } from '~/composables/useCountdown'
 
 const props = defineProps<{ error: NuxtError }>()
 
@@ -8,10 +9,10 @@ const missing = computed(() => code.value === 404)
 const codeLabel = computed(() => String(code.value).padStart(3, '0'))
 
 useSeoMeta({
-  title: () => `${code.value} — Maker Faire Kochi`,
+  title: () => (missing.value ? '404 — Page not found | Maker Faire Kochi' : `${code.value} — Maker Faire Kochi`),
   description: () =>
     missing.value
-      ? 'That sheet is not in the drawing set for Maker Faire Kochi 2027.'
+      ? "Page not found. No content here: we ran out of tokens, so we stopped. We'll ask a maker to complete this."
       : 'Something jammed while drawing this page.',
 })
 
@@ -21,22 +22,18 @@ function go(path: string) {
 </script>
 
 <template>
-  <div class="err maker-app">
-    <header class="err-bar">
-      <a href="/" class="err-brand" @click.prevent="go('/')">
-        <img class="mark" src="/img/logo/apple-touch-icon.png" alt="" width="28" height="28" />
-        <span>Maker Faire Kochi</span>
-      </a>
-      <span class="err-sheet">{{ missing ? 'Missing sheet' : 'Fault' }}</span>
-      <nav class="err-nav" aria-label="Error sheet">
-        <a href="/" class="err-link" @click.prevent="go('/')">Home</a>
-        <a href="/interestform" class="err-link" @click.prevent="go('/interestform')">Interest</a>
-        <a href="/volunteer" class="err-link" @click.prevent="go('/volunteer')">Volunteer</a>
-      </nav>
-    </header>
+  <div class="err maker-app" :class="{ 'err-missing field-yellow': missing }">
 
     <main class="err-shell">
-      <header class="err-rule" aria-hidden="true">
+      <!-- No bar, as on the landing page: the real lockup, which is the way home. -->
+      <a href="/" class="err-logo-link" @click.prevent="go('/')">
+        <picture>
+          <source srcset="/img/logo/mf-kochi-long@2x.webp 2x, /img/logo/mf-kochi-long.webp 1x" type="image/webp" />
+          <img class="err-logo" src="/img/logo/mf-kochi-long.png" width="193" height="32" alt="Maker Faire Kochi" decoding="async" />
+        </picture>
+      </a>
+
+      <header v-if="!missing" class="err-rule" aria-hidden="true">
         <span>Sht {{ codeLabel }} / ERR</span>
         <span>{{ missing ? 'Not in set' : 'Fault' }}</span>
         <span>Maker Faire Kochi · 2027</span>
@@ -44,32 +41,28 @@ function go(path: string) {
 
       <div class="err-grid">
         <div class="err-copy-col">
-          <h1 class="err-title">
-            <template v-if="missing">
-              Sheet <span class="err-accent">missing</span>
-            </template>
-            <template v-else>
-              Plot <span class="err-accent">jammed</span>
-            </template>
-          </h1>
+          <div class="err-title-box">
+            <p v-if="missing" class="err-eyebrow">404 · Page not found</p>
+            <h1 class="err-title">
+              <template v-if="missing">
+                We ran out of tokens, so we stopped.
+              </template>
+              <template v-else>
+                Plot <span class="err-accent">jammed</span>
+              </template>
+            </h1>
+            <p v-if="missing" class="err-punch">We'll ask a maker to complete this.</p>
+            <p v-if="missing" class="err-nothing">No content here. It was working yesterday, we swear.</p>
+          </div>
 
-          <p class="err-lede">
-            <template v-if="missing">
-              This path is not filed in the drawing set. It may be mistyped, or the
-              sheet was never cut.
-            </template>
-            <template v-else>
-              {{ error.statusMessage || 'Something went wrong while drawing this page.' }}
-            </template>
+          <p v-if="!missing" class="err-lede">
+            {{ error.statusMessage || 'Something went wrong while drawing this page.' }}
           </p>
 
-          <p class="err-note">
+          <p v-if="!missing" class="err-note">
             The Faire is still on the bench. Go home, send interest, or join the media
             team.
           </p>
-
-          <!-- The story: the route breaks here; the robot stops at the gap. -->
-          <RouteBot v-if="missing" class="err-routebot" />
 
           <div class="err-actions">
             <button type="button" class="key key-red" @click="go('/')">
@@ -84,7 +77,8 @@ function go(path: string) {
           </div>
         </div>
 
-        <aside class="err-card" aria-hidden="true">
+        <MakeyFacepalm v-if="missing" />
+        <aside v-else class="err-card" aria-hidden="true">
           <div class="err-brand-bar"><span class="cyan" /><span class="red" /></div>
 
           <div class="err-stage">
@@ -189,7 +183,17 @@ function go(path: string) {
           </dl>
         </aside>
       </div>
+
     </main>
+
+    <!-- The landing page's yellow-then-blue rhythm: the event, as plain facts. -->
+    <footer v-if="missing" class="err-event">
+      <p class="err-event-name">Maker Faire Kochi</p>
+      <p class="err-event-facts">
+        {{ EVENT.rangeStart.label }}–{{ EVENT.rangeEnd.label }} · {{ EVENT.venueLabel }}, {{ EVENT.place }} · {{ EVENT.admissionLabel }}
+      </p>
+      <a class="err-event-mail" :href="`mailto:${CONTACT_EMAIL}`">{{ CONTACT_EMAIL }}</a>
+    </footer>
   </div>
 </template>
 
@@ -205,71 +209,13 @@ function go(path: string) {
   background-position: -12px -12px;
 }
 
-.err-bar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: stretch;
-  background: var(--pn-enamel);
-  border-bottom: 2px solid var(--pn-ink);
-  font-family: var(--font-readout);
-}
 
-.err-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 1.5rem;
-  border-right: 1px solid var(--pn-ink);
-  font-weight: 500;
-  font-size: 0.8rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--pn-ink);
-}
 
-.mark {
-  width: 28px;
-  height: 28px;
-}
 
-.err-sheet {
-  align-self: center;
-  padding: 0 1.5rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pn-label);
-}
 
-.err-nav {
-  display: flex;
-}
 
-.err-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 1.1rem;
-  border-left: 1px solid var(--pn-ink);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--pn-ink);
-}
 
-.err-link:hover {
-  background: rgba(0, 174, 239, 0.08);
-}
 
-.err-link:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
-}
 
 .err-shell {
   flex: 1;
@@ -349,11 +295,6 @@ function go(path: string) {
   font-size: 1.125rem;
   line-height: 1.55;
   color: var(--pn-ink);
-}
-
-.err-routebot {
-  max-width: 34rem;
-  margin: 1.75rem 0 0;
 }
 
 .err-note {
@@ -453,20 +394,6 @@ function go(path: string) {
 }
 
 @media (max-width: 640px) {
-  .err-bar {
-    grid-template-columns: 1fr auto;
-  }
-
-  .err-sheet,
-  .err-brand span {
-    display: none;
-  }
-
-  .err-link {
-    padding: 0 0.7rem;
-    font-size: 0.6875rem;
-  }
-
   .err-shell {
     padding: 1.5rem 1.25rem calc(var(--rail-h) + 1.75rem);
   }
@@ -499,4 +426,102 @@ function go(path: string) {
     transition: none;
   }
 }
+
+.err-missing { background-image: none; background-color: var(--field-yellow); }
+.err-missing .err-shell { width: min(100%, 82.5rem); padding-bottom: 2.5rem; }
+.err-missing .err-shell > * { position: relative; z-index: 1; }
+.err-missing .err-title-box { container-type: inline-size; grid-area: title; }
+.err-eyebrow {
+  margin: 0 0 0.9rem;
+  font: 700 0.8125rem/1.2 var(--font-readout);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--field-blue);
+}
+.err-nothing { max-width: 34ch; margin: 1.25rem 0 0; font: 500 1rem/1.5 var(--font-readout); color: var(--pn-ink); }
+/* The punchline, as a sticker: the landing page's display face, yellow on campaign blue, hard shadow, slightly off true. */
+.err-punch {
+  display: inline-block;
+  max-width: 100%;
+  margin: 1.1rem 0 0;
+  padding: 0.5em 0.8em 0.45em;
+  background: var(--field-blue);
+  color: var(--field-yellow);
+  box-shadow: 0.3rem 0.3rem 0 var(--pn-ink);
+  font: 400 clamp(0.9rem, 3.9cqi, 1.5rem)/var(--lh-display) var(--font-panel);
+  text-transform: uppercase;
+  text-wrap: balance;
+  transform: rotate(-1.5deg);
+  transform-origin: 0 50%;
+  animation: err-pop 620ms cubic-bezier(0.2, 1.4, 0.4, 1) 1.1s both;
+}
+@keyframes err-pop {
+  from { opacity: 0; transform: rotate(-6deg) scale(0.6); }
+  to { opacity: 1; transform: rotate(-1.5deg); }
+}
+.err-missing .err-actions { grid-area: actions; }
+.err-missing .facepalm { grid-area: fig; align-self: center; }
+/* The copy column dissolves into the grid, so on a phone Makey can sit between the words and the buttons. */
+.err-missing .err-copy-col { display: contents; }
+.err-missing .err-grid {
+  /* Spacer rows above and below the words, so they stay together and centred beside Makey. */
+  grid-template-areas: '. fig' 'title fig' 'actions fig' '. fig';
+  grid-template-rows: 1fr auto auto 1fr;
+  align-items: start;
+  row-gap: 1.25rem;
+}
+.err-missing .err-actions { margin-top: 0.5rem; }
+.err-missing .err-title { font-size: clamp(1.4rem, 6.6cqi, 3.75rem); text-transform: uppercase; text-wrap: balance; color: var(--field-blue); }
+.err-missing .err-rule span { color: var(--field-blue); }
+
+@media (max-width: 56.25rem) {
+  .err-missing .err-grid {
+    grid-template-areas: 'title' 'fig' 'actions';
+    grid-template-rows: auto;
+    row-gap: 1rem;
+  }
+  .err-missing .err-rule { margin-bottom: 1.5rem; }
+}
+@media (max-width: 40rem) {
+  .err-missing .err-rule span:not(:first-child) { display: none; }
+  .err-missing .err-actions .key { padding-inline: 1rem; }
+}
+
+/* ── The event strip: campaign blue under the yellow field ── */
+.err-event {
+  display: grid;
+  gap: 0.35rem 2rem;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  padding: 1.25rem max(1.5rem, calc((100% - 82.5rem) / 2)) calc(1.25rem + env(safe-area-inset-bottom));
+  background: var(--field-blue);
+  color: var(--color-white);
+  font-family: var(--font-readout);
+}
+.err-event p { margin: 0; }
+.err-event-name { font: 400 1.125rem/1.2 var(--font-panel); letter-spacing: 0.02em; color: var(--field-yellow); }
+.err-event-facts { font-size: 0.9375rem; font-weight: 600; letter-spacing: 0.03em; }
+.err-event-mail { font-size: 0.9375rem; font-weight: 600; color: var(--color-white); text-decoration: underline; text-underline-offset: 0.2em; }
+.err-event-mail:focus-visible { outline: 2px solid var(--field-yellow); outline-offset: 3px; }
+@media (max-width: 56.25rem) {
+  .err-event { grid-template-columns: 1fr; padding-inline: 1.5rem; }
+}
+
+/* ── The landing page's logo, with no bar around it ── */
+.err-logo-link { display: block; width: fit-content; margin-bottom: 1.5rem; }
+.err-logo { display: block; width: min(13.75rem, 60vw); height: auto; }
+
+/* ── Entrance (its Pause / reduced-motion overrides are in the unscoped block at the foot) ── */
+@keyframes err-rise { from { opacity: 0; transform: translateY(0.9rem); } to { opacity: 1; transform: none; } }
+.err-missing .err-title-box, .err-missing .err-actions, .err-missing .facepalm {
+  animation: err-rise 520ms var(--ease-out, ease-out) both;
+}
+.err-missing .facepalm { animation-delay: 140ms; }
+.err-missing .err-actions { animation-delay: 260ms; }
+</style>
+
+<!-- Unscoped on purpose: a scoped :global() drops the descendant part of a selector. -->
+<style>
+html[data-motion='paused'] .err-missing :is(.err-title-box, .err-actions, .facepalm, .err-punch) { animation-play-state: paused; }
+html[data-motion='reduced'] .err-missing :is(.err-title-box, .err-actions, .facepalm, .err-punch) { animation: none; }
 </style>

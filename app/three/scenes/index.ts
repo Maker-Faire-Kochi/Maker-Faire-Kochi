@@ -17,6 +17,7 @@ export const SCENES = {
   'people': () => import('../people/lab'),
   'dog': () => import('../robots/dog/lab'),
   'makey': () => import('../robots/makey/lab'),
+  'makey404': () => import('./makey404'),
 } satisfies Record<string, () => Promise<{ default: SceneFactory }>>
 
 export type SceneName = keyof typeof SCENES
